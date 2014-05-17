@@ -79,7 +79,7 @@ TeleportClient.prototype._funcInternalCallbackHandler = function(message) {
 				this._funcObjectCreate(objectName);
 			}
 
-			this.emit('ready');
+			this.emit('ready', this._valueObjectsNames);
 		}
 	} else {
 		var errorInfo = {
@@ -92,13 +92,16 @@ TeleportClient.prototype._funcInternalCallbackHandler = function(message) {
 };
 
 TeleportClient.prototype._funcObjectCreate = function(objectName) {
-	this.objects[objectName] = new TeleportedObject();
+	var objectProps = this._valueObjectsNames[objectName];
+	this.objects[objectName] = new TeleportedObject(objectProps);
 
-	for (var methodIndex = 0; methodIndex < this._valueObjectsNames[objectName].methods.length; methodIndex++) {
-		var methodName = this._valueObjectsNames[objectName].methods[methodIndex];
-		this.objects[objectName][methodName] = this._funcMethodCreate(objectName, methodName).bind(this);
+	for (var methodIndex = 0; methodIndex < objectProps.methods.length; methodIndex++) {
+		var methodName = objectProps.methods[methodIndex];
+
+		this.objects[objectName][methodName] =
+			this._funcMethodCreate(objectName, methodName).bind(this);
 	}
-}
+};
 
 TeleportClient.prototype._funcMethodCreate = function(objectName, methodName) {
 	return function(options, callback) {
@@ -218,8 +221,9 @@ TeleportClient.prototype._funcWsOnError = function(error) {
 //
 util.inherits(TeleportedObject, EventEmitter);
 
-function TeleportedObject() {
-
+function TeleportedObject(objectProps) {
+	this.__events__ = objectProps.events;
+	this.__methods__ = objectProps.methods;
 };
 
 //
