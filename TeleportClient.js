@@ -7,7 +7,6 @@ need include:
 "use strict"
 
 util.inherits(TeleportClient, EventEmitter);
-
 function TeleportClient(options) {
 	//options
 	this._optionWsServerAddress = options.serverAddress;
