@@ -35,8 +35,6 @@ teleportClient.on('ready', function(objectsProps) {
 
 	teleportClient.objects.ipBox
 		.getIps(someCallback)
-		.on('newIps', someHandler)
-		.on('warning', someHandler)
-		.on('error', someHandler);
+		.on('newIps', someHandler);
 });
 ```
