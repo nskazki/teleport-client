@@ -1,15 +1,14 @@
 {
   "name": "nskazki-web-teleportclient",
   "main": "TeleportClient.js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://github.com/MyWebComponents/TeleportClient",
   "authors": [
     "nskazki <nskazki@gmail.com>"
   ],
   "description": "client for TeleportServer (rpc client)",
   "keywords": [
-    "rpc",
-    "nskazki"
+    "rpc"
   ],
   "license": "MIT",
   "ignore": [
