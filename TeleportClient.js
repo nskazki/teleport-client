@@ -7,8 +7,8 @@ need include:
 "use strict"
 
 define(
-	['./bower_components/nskazki-web-helpers/EventEmitter',
-		'./bower_components/nskazki-web-helpers/util'
+	['../nskazki-web-helpers/EventEmitter',
+		'../nskazki-web-helpers/util'
 	],
 	function(EventEmitter, util) {
 		util.inherits(TeleportClient, EventEmitter);
