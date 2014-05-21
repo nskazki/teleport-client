@@ -1,0 +1,23 @@
+{
+  "name": "nskazki-web-helpers",
+  "version": "0.1.1",
+  "homepage": "https://github.com/MyWebComponents/Helpers",
+  "authors": [
+    "nskazki <nskazki@gmail.com>"
+  ],
+  "description": "my helpers, for my web projects :)",
+  "moduleType": [
+    "amd"
+  ],
+  "keywords": [
+    "helpers"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
