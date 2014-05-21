@@ -1,9 +1,6 @@
 TeleportClient
 ==============
 
-```
-bower install nskazki-web-teleportclient
-```
 [TeleportServer](https://github.com/MyNodeComponents/TeleportServer)
 
 <h5>Это RPC клиент, умеет:</h5>

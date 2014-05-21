@@ -6,7 +6,36 @@ need include:
 
 "use strict"
 
+//requirejs
+//require
+//end requirejs
+
 util.inherits(TeleportClient, EventEmitter);
+
+/**
+	Конструктор класса TeleportClient, 
+	
+	формат принимаего аргумента:
+	options = {
+		serverAddress: "ws://localhost:8000",
+		isDebug: true
+	}
+
+	формат инициалируемых полей:
+	this._valueRequests = [
+		1: someCallback,
+		2: secondCallback
+	]
+
+	this.objects = {
+		'someServerObjectName': {
+			__events__ = ['firstPermitedEventName', 'secondPermitedEventName'],
+			__methods__ = ['firstMethodName', 'secondMethodName'],
+			firstMethodName: function() {...},
+			secondMethodName: function() {...},
+		}
+	}
+*/
 function TeleportClient(options) {
 	//options
 	this._optionWsServerAddress = options.serverAddress;
@@ -14,23 +43,24 @@ function TeleportClient(options) {
 
 	//end options
 
-	//values
+	//private
 	this._valueWsClient = null;
 	this._valueRequests = [];
-	this._valueObjectsNames = null;
-
-	this.objects = {};
-
+	this._valueServerObjectsProps = null;
 	this._valueIsInit = false;
 
-	//end values
+	//end private
+
+	//public
+	this.objects = {};
+
+	//end public
 }
 
 //public
 TeleportClient.prototype.init = function() {
 	if (!this._valueIsInit) {
 		this._valueWsClient = new WebSocket(this._optionWsServerAddress);
-
 
 		this._valueWsClient.onmessage = this._funcWsOnMessage.bind(this);
 		this._valueWsClient.onopen = this._funcWsOnOpen.bind(this);
@@ -57,28 +87,45 @@ TeleportClient.prototype._funcWsSessionInit = function() {
 	});
 };
 
+/**
+	хэндлер для ответов на сервисные запросы к серверу
+
+	формат принимаего аргумента
+	message = {
+		type: 'internalCallback'
+		internalCommand: 'getObjects',
+		error: null,
+		result: {
+			someObjectName: {
+				methods: ['firstMethod'],
+				events: ['firstEventName']
+			}
+		}
+	}	
+
+*/
 TeleportClient.prototype._funcInternalCallbackHandler = function(message) {
 	if (message.internalCommand == "getObjects") {
 		if (message.error) {
 			var errorInfo = {
-				desc: "[TeleportClient] Error: getObjects вернул ошибку: " + message.error,
+				desc: "[TeleportClient] Error: запрос на получение свойств серверных объектов, вернул ошибку.",
 				message: message
 			};
 
 			this.emit("error", errorInfo);
 		} else {
 			this.emit('info', {
-				desc: "[TeleportClient] Info: объекты получены: " + message.result,
+				desc: "[TeleportClient] Info: свойства серверных объектов полученны.",
 				message: message
 			});
 
-			this._valueObjectsNames = message.result;
+			this._valueServerObjectsProps = message.result;
 
-			for (var objectName in this._valueObjectsNames) {
+			for (var objectName in this._valueServerObjectsProps) {
 				this._funcObjectCreate(objectName);
 			}
 
-			this.emit('ready', this._valueObjectsNames);
+			this.emit('ready', this._valueServerObjectsProps);
 		}
 	} else {
 		var errorInfo = {
@@ -90,69 +137,7 @@ TeleportClient.prototype._funcInternalCallbackHandler = function(message) {
 	}
 };
 
-TeleportClient.prototype._funcObjectCreate = function(objectName) {
-	var objectProps = this._valueObjectsNames[objectName];
-	this.objects[objectName] = new TeleportedObject(objectProps);
 
-	for (var methodIndex = 0; methodIndex < objectProps.methods.length; methodIndex++) {
-		var methodName = objectProps.methods[methodIndex];
-
-		this.objects[objectName][methodName] =
-			this._funcMethodCreate(objectName, methodName).bind(this);
-	}
-};
-
-TeleportClient.prototype._funcMethodCreate = function(objectName, methodName) {
-	return function(options, callback) {
-		if (!callback) {
-			callback = options;
-			options = null;
-		}
-		if (!callback) {
-			callback = function() {};
-		}
-
-		var requestId = this._valueRequests.length;
-
-		this.emit('info', {
-			desc: "[TeleportClient] Info: вызвын метод серверного объекта: " + objectName + "." + methodName,
-			args: options,
-			requestId: requestId
-		});
-
-		this._valueRequests.push(callback);
-
-		this._funcWsSendMessage({
-			objectName: objectName,
-			type: "command",
-			command: methodName,
-			requestId: requestId,
-			args: options
-		});
-
-		return this.objects[objectName];
-	};
-};
-
-TeleportClient.prototype._funcCallbackHandler = function(message) {
-	this.emit('info', {
-		desc: "[TeleportClient] Info: сервер вернул callback на: " + message.objectName + "." + message.command,
-		message: message
-	});
-
-	this._valueRequests[message.requestId](message.error, message.result);
-};
-
-TeleportClient.prototype._funcEventHandler = function(message) {
-	this.emit('info', {
-		desc: "[TeleportClient] nfo: сервер передал событие: " + message.objectName + "." + message.event,
-		message: message
-	});
-
-	this[message.objectName].emit(message.event, message.args);
-};
-
-//end private
 
 //server
 TeleportClient.prototype._funcWsOnOpen = function() {
@@ -163,6 +148,16 @@ TeleportClient.prototype._funcWsOnOpen = function() {
 	this._funcWsSessionInit();
 }
 
+/**
+	Хендлер для всех типов сообщений принмаемых от сервера, вызвается непосредственно
+	ws клиентом.
+	
+	обязательным полем для принятого аргумента является type
+	message = {
+		type: 'someType',
+		...
+	}
+*/
 TeleportClient.prototype._funcWsOnMessage = function(sourceMessage) {
 	var message = JSON.parse(sourceMessage.data);
 
@@ -217,7 +212,9 @@ TeleportClient.prototype._funcWsOnError = function(error) {
 //end server
 
 
-//
+/**
+	Конструктор серверных объектов
+*/
 util.inherits(TeleportedObject, EventEmitter);
 
 function TeleportedObject(objectProps) {
@@ -225,4 +222,116 @@ function TeleportedObject(objectProps) {
 	this.__methods__ = objectProps.methods;
 };
 
-//
+/**
+	Метод инициализирующий принятый от сервера объект, 
+	принимает имя объекта, не очень оптимально, но наглядно
+	
+*/
+TeleportClient.prototype._funcObjectCreate = function(objectName) {
+	var objectProps = this._valueServerObjectsProps[objectName];
+	this.objects[objectName] = new TeleportedObject(objectProps);
+
+	for (var methodIndex = 0; methodIndex < objectProps.methods.length; methodIndex++) {
+		var methodName = objectProps.methods[methodIndex];
+
+		this.objects[objectName][methodName] =
+			this._funcMethodCreate(objectName, methodName).bind(this);
+	}
+};
+
+/**
+	Эта функция принимает строки methodName и objectName.
+	И возвражает функцию, для которой эти строки будут доступны через замыкание.
+	
+	Создаваемая функция, булучи вызванной принимает некий параметр options и 
+	функцию callback. 
+	Этому вызову присваивается requestId которому в соответствие ставиться принятый callback.
+	После этого запрос отправляется на сервер.
+	
+	Так как эта функция будет присвоенна полю объекта, то для удобства она возвращает 
+	контекст объека из которого она была вызванна.
+	Чтобы можно было писать вот такие штуки:
+	teleportClient.objects.someObjectName
+		.firstMethod(someHandler)
+		.secondMethod(someHandler);
+
+*/ 
+TeleportClient.prototype._funcMethodCreate = function(objectName, methodName) {
+	return function(options, callback) {
+		if (!callback) {
+			callback = options;
+			options = null;
+		}
+		if (!callback) {
+			callback = function() {};
+		}
+
+		var requestId = this._valueRequests.length;
+
+		this.emit('info', {
+			desc: "[TeleportClient] Info: вызвын метод серверного объекта: " + objectName + "." + methodName,
+			args: options,
+			requestId: requestId
+		});
+
+		this._valueRequests.push(callback);
+
+		this._funcWsSendMessage({
+			objectName: objectName,
+			type: "command",
+			command: methodName,
+			requestId: requestId,
+			args: options
+		});
+
+		return this.objects[objectName];
+	};
+};
+
+/**
+	Хендлер для калбеков методов серверных объектов.
+	формат принимаемого аргумента 
+	
+	message = {
+		type: 'callback',
+		command: 'methodName',
+		objectName: 'objectName',
+		requestId: 0,
+		error: null,
+		result: someResult
+	}
+
+	внутри метода будет вызван калбек поставленный в соответствие с requestId
+
+*/
+TeleportClient.prototype._funcCallbackHandler = function(message) {
+	this.emit('info', {
+		desc: "[TeleportClient] Info: сервер вернул callback на: " + message.objectName + "." + message.command,
+		message: message
+	});
+
+	this._valueRequests[message.requestId](message.error, message.result);
+};
+
+/**
+	Хэндлер для событий выбрасываемых серверными объектами
+	формат принимаего аргумента
+
+	message = {
+		type: 'event',
+		event: 'eventName',
+		objectName: 'someObjectName'
+		arg: someArgs
+	}
+
+*/
+TeleportClient.prototype._funcEventHandler = function(message) {
+	this.emit('info', {
+		desc: "[TeleportClient] Info: сервер передал событие: " + message.objectName + "." + message.event,
+		message: message
+	});
+
+	this[message.objectName].emit(message.event, message.args);
+};
+
+//end private
