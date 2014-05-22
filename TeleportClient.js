@@ -4,13 +4,48 @@ need include:
 	Helpers/EventEmitter.js
 */
 
-"use strict"
+/*
+	requirejs.config({
+		paths: {
+			EventEmitter: './someLibsFolder/bower_components/nskazki-web-helpers/EventEmitter',
+			util: './someLibsFolder/bower_components/nskazki-web-helpers/util'
+		}
+	});
 
-define(
-	['../nskazki-web-helpers/EventEmitter',
-		'../nskazki-web-helpers/util'
-	],
-	function(EventEmitter, util) {
+	or
+	
+	<script src="./js/someLibsFolder/Helpers/EventEmitter.js" type="text/javascript"></script>
+	<script src="./js/someLibsFolder/Helpers/util.js" type="text/javascript"></script>
+*/
+
+"use strict";
+
+(function(namespace) {
+
+	if (namespace.define) {
+		/**
+			Раз есть define значит подключен requirejs.
+			Зависимости будет переданны в CreateTeleportServer, 
+			который вернет сформированный класс TeleportClient
+
+		*/
+		define(
+			[
+				'EventEmitter',
+				'util'
+			],
+			CreateTeleportServer);
+	} else {
+		/**
+			Иначе считаю, что TeleportClient подключен в "классический"
+			проект, зависимости удовлетворены разработчиком проекта которому мой 
+			класс понадобился, и добавляю сформированный класс в глобальное пространство имен.
+	
+		*/
+		namespace.TeleportClient = CreateTeleportServer(EventEmitter, util);
+	}
+
+	function CreateTeleportServer(EventEmitter, util) {
 		util.inherits(TeleportClient, EventEmitter);
 
 		/**
@@ -36,6 +71,7 @@ define(
 					secondMethodName: function() {...},
 				}
 			}
+	
 		*/
 		function TeleportClient(options) {
 			//options
@@ -158,6 +194,7 @@ define(
 				type: 'someType',
 				...
 			}
+			
 		*/
 		TeleportClient.prototype._funcWsOnMessage = function(sourceMessage) {
 			var message = JSON.parse(sourceMessage.data);
@@ -352,4 +389,5 @@ define(
 		//end private
 
 		return TeleportClient;
-	});
+	}
+}(window));
