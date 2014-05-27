@@ -15,9 +15,9 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 		serverAddress: "ws://localhost:8000",
 		isDebug: false
 	})
-		.on('info', logger)
-		.on('debug', logger)
-		.on('error', logger)
+		.on('info', console.log.bind(console))
+		.on('debug', console.log.bind(console))
+		.on('error', console.log.bind(console))
 		.init();
 
 	teleportClient
@@ -50,7 +50,7 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 
 	function CreateEventLogger(objectName, eventName) {
 		return function(param) {
-			logger({
+			console.log({
 				desc: util.format("[%s.event] Info: получено событие с сервера %s", objectName, eventName),
 				param: param
 			});
@@ -59,15 +59,11 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 
 	function CreateCallbackLogger(objectName, methodName) {
 		return function(error, result) {
-			logger({
+			console.log({
 				desc: util.format("[%s.callback] Info: вернулся результат вызова метода %s", objectName, methodName),
 				result: result,
 				error: error
 			})
 		}
-	}
-
-	function logger(log) {
-		console.log(log);
 	}
 });
