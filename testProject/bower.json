@@ -1,0 +1,21 @@
+{
+  "name": "testProject",
+  "version": "0.1.7",
+  "homepage": "https://github.com/nskazki/web-TeleportClient",
+  "authors": [
+    "nskazki <nskazki@gmail.com>"
+  ],
+  "description": "test project to teleport-client",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "teleport-client": "~0.1.7",
+    "requirejs": "~2.1.12"
+  }
+}
