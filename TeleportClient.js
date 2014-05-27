@@ -40,7 +40,7 @@ need include:
 			Иначе считаю, что TeleportClient подключен в "классический"
 			проект, зависимости удовлетворены разработчиком проекта которому мой 
 			класс понадобился, и добавляю сформированный класс в глобальное пространство имен.
-	
+
 		*/
 		namespace.TeleportClient = CreateTeleportServer(EventEmitter, util);
 	}
@@ -71,7 +71,7 @@ need include:
 					secondMethodName: function() {...},
 				}
 			}
-	
+
 		*/
 		function TeleportClient(options) {
 			//options
@@ -114,8 +114,8 @@ need include:
 
 		//private
 		TeleportClient.prototype._funcWsSessionInit = function() {
-			this.emit('info', {
-				desc: "[TeleportClient] Info: отправил запрос на получение методов"
+			if (this._optionIsDebug) this.emit('debug', {
+				desc: "[TeleportClient] Debug: отправил запрос на получение методов"
 			})
 
 			this._funcWsSendMessage({
@@ -320,8 +320,8 @@ need include:
 
 				var requestId = this._valueRequests.length;
 
-				this.emit('info', {
-					desc: "[TeleportClient] Info: вызвын метод серверного объекта: " + objectName + "." + methodName,
+				if (this._optionIsDebug) this.emit('debug', {
+					desc: "[TeleportClient] Debug: вызвын метод серверного объекта: " + objectName + "." + methodName,
 					args: options,
 					requestId: requestId
 				});
@@ -357,8 +357,8 @@ need include:
 
 		*/
 		TeleportClient.prototype._funcCallbackHandler = function(message) {
-			this.emit('info', {
-				desc: "[TeleportClient] Info: сервер вернул callback на: " + message.objectName + "." + message.command,
+			this.emit('Debug', {
+				desc: "[TeleportClient] Debug: сервер вернул callback на: " + message.objectName + "." + message.command,
 				message: message
 			});
 
@@ -378,12 +378,12 @@ need include:
 
 		*/
 		TeleportClient.prototype._funcEventHandler = function(message) {
-			this.emit('info', {
-				desc: "[TeleportClient] Info: сервер передал событие: " + message.objectName + "." + message.event,
+			if (this._optionIsDebug) this.emit('debug', {
+				desc: "[TeleportClient] Debug: сервер передал событие: " + message.objectName + "." + message.event,
 				message: message
 			});
 
-			this[message.objectName].emit(message.event, message.args);
+			this.objects[message.objectName].emit(message.event, message.args);
 		};
 
 		//end private
