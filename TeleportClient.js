@@ -320,24 +320,30 @@ need include:
 
 		*/
 		TeleportClient.prototype._funcMethodCreate = function(objectName, methodName) {
-			return function() { //callback or (args and callback)
+			return function() { //(callback) or (args.., callback) or (args...) or ()
 				var args;
 				var callback;
 
 				if (arguments.length > 0) {
-					args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
-					callback = arguments[arguments.length - 1];
-				} else {
-					args = [];
+					var sliceEndIndex = arguments.length - 1;
+					var callbackIndex = arguments.length - 1;
+
+					if (typeof(arguments[callbackIndex]) != 'function') sliceEndIndex = arguments.length;
+					else callback = arguments[callbackIndex];
+
+					args = Array.prototype.slice.call(arguments, 0, sliceEndIndex);
+				}
+
+				if (!callback)
 					callback = function(error, result) {
-						this.emit('info', {
-							desc: "[TeleportClient] Info: сервер вернул результат для " + objectName + "." + methodName + " без зарегистрированного на клиенте калбека",
+						this.emit('warn', {
+							desc: "[TeleportClient] Warn: сервер вернул результат для " + objectName + "." + methodName + " без зарегистрированного на клиенте калбека",
 							calledWithArguments: arguments,
 							returnedError: error,
 							returnedResult: result
 						});
 					};
-				}
+
 
 				var requestId = this._valueRequests.length;
 				this._valueRequests.push(callback);
@@ -389,11 +395,14 @@ need include:
 			Хэндлер для событий выбрасываемых серверными объектами
 			формат принимаего аргумента
 
+			так как emit принимает неограниченное количество аргументов передаваемых подписчикам, то
+			message.args это массив, содержащий переданные аргументы.
+
 			message = {
 				type: 'event',
 				event: 'eventName',
 				objectName: 'someObjectName'
-				arg: someArgs
+				args: [someArgs]
 			}
 
 		*/
