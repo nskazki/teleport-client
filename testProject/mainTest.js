@@ -3,7 +3,7 @@
 requirejs.config({
 	baseUrl: 'bower_components/',
 	paths: {
-		TeleportClient: 'teleport-client/TeleportClient',
+		TeleportClient: '../../TeleportClient', // teleport-client/TeleportClient
 		util: 'my-helpers/util',
 		EventEmitter: 'my-helpers/EventEmitter'
 	}
@@ -12,8 +12,8 @@ requirejs.config({
 
 requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 	var teleportClient = new TeleportClient({
-		serverAddress: "ws://localhost:8000",
-		isDebug: false
+		serverAddress: "ws://nskazki.dyndns.info:8000",
+		isDebug: true
 	})
 		.on('info', console.log.bind(console))
 		.on('debug', console.log.bind(console))
@@ -37,22 +37,32 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 
 				simpleObject
 					.on(
-						'myOptions',
-						CreateEventLogger('simpleObject', 'myOptions'))
+						'eventWithMyOptions',
+						CreateEventLogger('simpleObject', 'eventWithMyOptions'))
 					.on(
-						'emptyEvent',
-						CreateEventLogger('simpleObject', 'emptyEvent'))
-					.simpleAsyncFunc(
+						'eventWithoutArgs',
+						CreateEventLogger('simpleObject', 'eventWithoutArgs'))
+					.on(
+						'eventWithUnlimArgs',
+						CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
+					.simpleFunc(
 						params,
-						CreateCallbackLogger('simpleObject', 'simpleAsyncFunc'));
+						CreateCallbackLogger('simpleObject', 'simpleFunc'))
+					.simpleFuncWithUnlimArgs(
+						false, '1', 2, {
+							3: new Date()
+						},
+						CreateCallbackLogger('simpleObject', 'simpleFuncWithUnlimArgs'))
+					.simpleFuncWithoutArgs(
+						CreateCallbackLogger('simpleObject', 'simpleFuncWithoutArgs'));
 			});
 
 
 	function CreateEventLogger(objectName, eventName) {
-		return function(param) {
+		return function() {
 			console.log({
 				desc: util.format("[%s.event] Info: получено событие с сервера %s", objectName, eventName),
-				param: param
+				arguments: arguments
 			});
 		}
 	}
