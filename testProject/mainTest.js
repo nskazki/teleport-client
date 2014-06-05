@@ -13,10 +13,11 @@ requirejs.config({
 requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 	var teleportClient = new TeleportClient({
 		serverAddress: "ws://nskazki.dyndns.info:8000",
-		isDebug: true
+		isDebug: false
 	})
-		.on('info', console.log.bind(console))
 		.on('debug', console.log.bind(console))
+		.on('info', console.log.bind(console))
+		.on('warn', console.log.bind(console))
 		.on('error', console.log.bind(console))
 		.init();
 
@@ -35,6 +36,7 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 					param: 'wow!'
 				};
 
+				/*event*/
 				simpleObject
 					.on(
 						'eventWithMyOptions',
@@ -44,7 +46,10 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 						CreateEventLogger('simpleObject', 'eventWithoutArgs'))
 					.on(
 						'eventWithUnlimArgs',
-						CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
+						CreateEventLogger('simpleObject', 'eventWithUnlimArgs'));
+
+				/*funcs with callback*/
+				simpleObject
 					.simpleFunc(
 						params,
 						CreateCallbackLogger('simpleObject', 'simpleFunc'))
@@ -55,6 +60,12 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 						CreateCallbackLogger('simpleObject', 'simpleFuncWithUnlimArgs'))
 					.simpleFuncWithoutArgs(
 						CreateCallbackLogger('simpleObject', 'simpleFuncWithoutArgs'));
+
+				/*funcs without callback*/
+				simpleObject
+					.simpleFunc(params)
+					.simpleFuncWithUnlimArgs(false, '1', 2, 3)
+					.simpleFuncWithoutArgs();
 			});
 
 

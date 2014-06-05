@@ -342,7 +342,7 @@ need include:
 							returnedError: error,
 							returnedResult: result
 						});
-					};
+					}.bind(this);
 
 
 				var requestId = this._valueRequests.length;
