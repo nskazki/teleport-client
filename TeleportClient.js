@@ -1,21 +1,21 @@
 /*
 need include:
-	Helpers/util.js
-	Helpers/EventEmitter.js
+	my-helpers/util.js
+	my-helpers/EventEmitter.js
 */
 
 /*
 	requirejs.config({
 		paths: {
-			EventEmitter: './someLibsFolder/bower_components/nskazki-web-helpers/EventEmitter',
-			util: './someLibsFolder/bower_components/nskazki-web-helpers/util'
+			EventEmitter: 'bower_components/my-helpers/EventEmitter',
+			util: 'bower_components/my-helpers/util'
 		}
 	});
 
 	or
 	
-	<script src="./js/someLibsFolder/Helpers/EventEmitter.js" type="text/javascript"></script>
-	<script src="./js/someLibsFolder/Helpers/util.js" type="text/javascript"></script>
+	<script src="./js/someLibsFolder/my-helpers/EventEmitter.js" type="text/javascript"></script>
+	<script src="./js/someLibsFolder/my-helpers/util.js" type="text/javascript"></script>
 */
 
 "use strict";
@@ -127,6 +127,12 @@ need include:
 		/**
 			хэндлер для ответов на сервисные запросы к серверу
 
+			если поступил ответ на команду getObjects, то полученные свойства серверные объектов обрабатываются,
+			создаются клиентские прокси объекты, для их методов создаются прокси методы.
+			класс клиентских объектов наследует класс EventEmitter. для того чтобы пробрасывать серверные события. 
+			после обработки всех объектов на сервер будет переденанно собщение objectСreationСompleted.	
+
+
 			формат принимаего аргумента
 			message = {
 				type: 'internalCallback'
@@ -163,6 +169,11 @@ need include:
 					}
 
 					this.emit('ready', this._valueServerObjectsProps);
+
+					this._funcWsSendMessage({
+						type: "internalCommand",
+						internalCommand: "objectСreationСompleted",
+					})
 				}
 			} else {
 				var errorInfo = {
@@ -295,8 +306,8 @@ need include:
 			Эта функция принимает строки methodName и objectName.
 			И возвражает функцию, для которой эти строки будут доступны через замыкание.
 			
-			Создаваемая функция, булучи вызванной принимает некий параметр options и 
-			функцию callback. 
+			Создаваемая функция, булучи вызванной разбирает входящий массив arguments на собственно 
+			аргументы для функции и callback.
 			Этому вызову присваивается requestId которому в соответствие ставиться принятый callback.
 			После этого запрос отправляется на сервер.
 			
@@ -309,31 +320,40 @@ need include:
 
 		*/
 		TeleportClient.prototype._funcMethodCreate = function(objectName, methodName) {
-			return function(options, callback) {
-				if (!callback) {
-					callback = options;
-					options = null;
-				}
-				if (!callback) {
-					callback = function() {};
+			return function() { //callback or (args and callback)
+				var args;
+				var callback;
+
+				if (arguments.length > 0) {
+					args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+					callback = arguments[arguments.length - 1];
+				} else {
+					args = [];
+					callback = function(error, result) {
+						this.emit('info', {
+							desc: "[TeleportClient] Info: сервер вернул результат для " + objectName + "." + methodName + " без зарегистрированного на клиенте калбека",
+							calledWithArguments: arguments,
+							returnedError: error,
+							returnedResult: result
+						});
+					};
 				}
 
 				var requestId = this._valueRequests.length;
+				this._valueRequests.push(callback);
 
 				if (this._optionIsDebug) this.emit('debug', {
 					desc: "[TeleportClient] Debug: вызвын метод серверного объекта: " + objectName + "." + methodName,
-					args: options,
+					args: args,
 					requestId: requestId
 				});
-
-				this._valueRequests.push(callback);
 
 				this._funcWsSendMessage({
 					objectName: objectName,
 					type: "command",
 					command: methodName,
 					requestId: requestId,
-					args: options
+					args: args
 				});
 
 				return this.objects[objectName];
@@ -383,7 +403,13 @@ need include:
 				message: message
 			});
 
-			this.objects[message.objectName].emit(message.event, message.args);
+			var emitArgs = [];
+			emitArgs.push(message.event);
+			emitArgs = emitArgs.concat(message.args);
+
+			var object = this.objects[message.objectName];
+
+			object.emit.apply(object, emitArgs);
 		};
 
 		//end private
