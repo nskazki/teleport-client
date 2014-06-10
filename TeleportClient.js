@@ -344,7 +344,6 @@ need include:
 						});
 					}.bind(this);
 
-
 				var requestId = this._valueRequests.length;
 				this._valueRequests.push(callback);
 
