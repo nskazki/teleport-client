@@ -382,7 +382,7 @@ need include:
 
 		*/
 		TeleportClient.prototype._funcCallbackHandler = function(message) {
-			this.emit('debug', {
+			if (this._optionIsDebug) this.emit('debug', {
 				desc: "[TeleportClient] Debug: сервер вернул callback на: " + message.objectName + "." + message.command,
 				message: message
 			});
