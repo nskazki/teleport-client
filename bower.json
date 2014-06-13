@@ -8,8 +8,7 @@
   ],
   "description": "js rpc client for node teleport-server",
   "moduleType": [
-    "amd",
-    "globals"
+    "amd"
   ],
   "keywords": [
     "rpc",

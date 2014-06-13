@@ -22,10 +22,6 @@ bower install teleport-client --save
 Если подклюна биюлиотека requirejs, то TeleportClient будет сформирован как модуль,
 иначе добавлен в глобальную область видимости.
 
-<h5>Пояснение к Example:</h5>
-Конструктор класса TeleportClient, принимает единственным параметром объект с опциями.
-Возвращает новый неинециализированный объект класса TeleportClient.
-
 <h5>Example:</h5>
 ```js
 var teleportClient = new TeleportClient({
