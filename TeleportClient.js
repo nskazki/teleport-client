@@ -181,7 +181,7 @@ need include:
 					message: message
 				};
 
-				this.emit("error", errorInfo);
+				this.emit("warn", errorInfo);
 			}
 		};
 
@@ -222,7 +222,7 @@ need include:
 					message: message
 				};
 
-				this.emit("error", errorInfo);
+				this.emit("warn", errorInfo);
 			}
 		};
 
@@ -237,7 +237,7 @@ need include:
 					error: error
 				};
 
-				this.emit("error", errorInfo);
+				this.emit("warn", errorInfo);
 			}
 		};
 
@@ -382,7 +382,7 @@ need include:
 
 		*/
 		TeleportClient.prototype._funcCallbackHandler = function(message) {
-			this.emit('Debug', {
+			this.emit('debug', {
 				desc: "[TeleportClient] Debug: сервер вернул callback на: " + message.objectName + "." + message.command,
 				message: message
 			});
