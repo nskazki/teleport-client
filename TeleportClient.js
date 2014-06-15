@@ -101,10 +101,73 @@ need include:
 
 				this._valueWsClient.onmessage = this._funcWsOnMessage.bind(this);
 				this._valueWsClient.onopen = this._funcWsOnOpen.bind(this);
-				this._valueWsClient.onclose = this._funcWsOnClosed.bind(this);
 				this._valueWsClient.onerror = this._funcWsOnError.bind(this);
+				this._valueWsClient.onclose = this.destroy.bind(this);
 
 				this._valueIsInit = true;
+			}
+
+			return this;
+		};
+
+		/**
+			Метод деструктор.
+			Снимает слушателей с WS Client.
+			Cнимает слушателей со всех серверных объектов.
+			Очищает серверные объекты.
+			Всем каллбекам ожидающим результат выполнения серверного метода будет возвращена ошибка.
+			Выбрасываю close
+			Снимаю всех слушателей с this
+			И ставлю флаг не инициализированн.
+
+		*/
+		TeleportClient.prototype.destroy = function(isError) {
+			if (this._valueIsInit) {
+				if (isError) {
+					this.emit('error', {
+						desc: '[TeleportClient] Error: Работа клиента прекращена в следствии ошибки, на все калбеки будет возвращена ошибка, подписчики на серверные события будут пудаленны.'
+					})
+				} else {
+					this.emit('info', {
+						desc: '[TeleportClient] Info: Работа клиента штатно прекращена, на все калбеки будет возвращена ошибка, подписчики на серверные события будут удаленны.'
+					});
+				}
+
+				this._valueWsClient.onmessage = null;
+				this._valueWsClient.onopen = null;
+				this._valueWsClient.onclose = null;
+				this._valueWsClient.onerror = null;
+
+				this._valueWsClient.close();
+
+				for (var objectName in this.objects) {
+					this.objects[objectName].destroy();
+				}
+				this.objects = {};
+				this._valueServerObjectsProps = {};
+
+				while (this._valueRequests.length) {
+					var callback = this._valueRequests.shift();
+					if (callback) callback({
+						desc: "[TeleportClient] Error: Соединение с сервером закрылось, поэтому результат выполнения метода не будет полученн."
+					});
+				}
+
+				this
+					.removeAllListeners('debug')
+					.removeAllListeners('info')
+					.removeAllListeners('warn')
+					.removeAllListeners('error')
+					.removeAllListeners('ready');
+
+				this._valueIsInit = false;
+
+				var closeListeners = this.listeners('close');
+				this.emit('close');
+
+				closeListeners.forEach(function(listener) {
+					this.removeListener('close', listener);
+				}.bind(this));
 			}
 
 			return this;
@@ -177,7 +240,7 @@ need include:
 				}
 			} else {
 				var errorInfo = {
-					desc: "[TeleportClient] Error: пришел ответ на неожиданную команду: " + message.internalCommand,
+					desc: "[TeleportClient] Warn: пришел ответ на неожиданную команду: " + message.internalCommand,
 					message: message
 				};
 
@@ -218,7 +281,7 @@ need include:
 				this._funcEventHandler(message);
 			} else {
 				var errorInfo = {
-					desc: "[TeleportClient] Error: для данного типа сообщений нет хэндлера: " + message.type,
+					desc: "[TeleportClient] Warn: для данного типа сообщений нет хэндлера: " + message.type,
 					message: message
 				};
 
@@ -232,21 +295,13 @@ need include:
 				this._valueWsClient.send(string);
 			} catch (error) {
 				var errorInfo = {
-					desc: "[TeleportClient] Error: ошибка отправки сообщения на сервер: " + error,
+					desc: "[TeleportClient] Warn: ошибка отправки сообщения на сервер: " + error,
 					message: message,
 					error: error
 				};
 
 				this.emit("warn", errorInfo);
 			}
-		};
-
-		TeleportClient.prototype._funcWsOnClosed = function() {
-			var errorInfo = {
-				desc: "[TeleportClient] Error: соединение с сервером закрылось"
-			};
-
-			this.emit("error", errorInfo);
 		};
 
 		TeleportClient.prototype._funcWsOnError = function(error) {
@@ -256,6 +311,7 @@ need include:
 			};
 
 			this.emit("error", errorInfo);
+			this.destroy('error');
 		};
 
 		//end server
@@ -284,6 +340,14 @@ need include:
 			this.__events__ = objectProps.events;
 			this.__methods__ = objectProps.methods;
 		};
+
+		TeleportedObject.prototype.destroy = function() {
+			this.removeAllListeners();
+
+			this.__methods__.forEach(function(methodName) {
+				delete this[methodName];
+			}.bind(this));
+		}
 
 		/**
 			Метод инициализирующий принятый от сервера объект, 
@@ -388,6 +452,7 @@ need include:
 			});
 
 			this._valueRequests[message.requestId](message.error, message.result);
+			delete this._valueRequests[message.requestId];
 		};
 
 		/**
