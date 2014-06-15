@@ -28,10 +28,11 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 			.on('close', function() {
 				console.warn({
 					desc: "[main] Warn: Соединение с TeleportServer закрылось, будет выполненно переподключение.",
-					serverAddress: "ws://nskazki.dyndns.info:8000"
+					serverAddress: "ws://nskazki.dyndns.info:8000",
+					delay: 1000*20
 				});
 
-				initTeleportClient();
+				setTimeout(initTeleportClient, 1000*20);
 			})
 			.on(
 				'ready',
