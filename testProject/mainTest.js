@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 requirejs.config({
 	baseUrl: 'bower_components/',
@@ -11,63 +11,81 @@ requirejs.config({
 
 
 requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
-	var teleportClient = new TeleportClient({
+	//for Debuging
+	window.teleportClient = new TeleportClient({
 		serverAddress: "ws://nskazki.dyndns.info:8000",
+		//serverAddress: "ws://localhost:8000",
 		isDebug: false
-	})
-		.on('debug', console.log.bind(console))
-		.on('info', console.log.bind(console))
-		.on('warn', console.log.bind(console))
-		.on('error', console.log.bind(console))
-		.init();
+	});
 
-	teleportClient
-		.on(
-			'ready',
-			CreateEventLogger('teleportClient', 'ready'))
-		.on(
-			'ready',
-			function(objectsProps) {
-				var simpleObject = teleportClient.objects.simpleObject;
+	(function initTeleportClient() {
 
-				var params = {
-					simple: 'object',
-					with: 'some',
-					param: 'wow!'
-				};
+		teleportClient
+			.on('debug', console.debug.bind(console))
+			.on('info', console.info.bind(console))
+			.on('warn', console.warn.bind(console))
+			.on('error', console.error.bind(console))
+			.on('close', function() {
+				console.warn({
+					desc: "[main] Warn: Соединение с TeleportServer закрылось, будет выполненно переподключение.",
+					serverAddress: "ws://nskazki.dyndns.info:8000"
+				});
 
-				/*event*/
-				simpleObject
-					.on(
-						'eventWithMyOptions',
-						CreateEventLogger('simpleObject', 'eventWithMyOptions'))
-					.on(
-						'eventWithoutArgs',
-						CreateEventLogger('simpleObject', 'eventWithoutArgs'))
-					.on(
-						'eventWithUnlimArgs',
-						CreateEventLogger('simpleObject', 'eventWithUnlimArgs'));
+				initTeleportClient();
+			})
+			.on(
+				'ready',
+				CreateEventLogger('teleportClient', 'ready'))
+			.on(
+				'ready',
+				function(objectsProps) {
+					//for Debuging
+					window.simpleObject = teleportClient.objects.simpleObject;;
 
-				/*funcs with callback*/
-				simpleObject
-					.simpleFunc(
-						params,
-						CreateCallbackLogger('simpleObject', 'simpleFunc'))
-					.simpleFuncWithUnlimArgs(
-						false, '1', 2, {
-							3: new Date()
-						},
-						CreateCallbackLogger('simpleObject', 'simpleFuncWithUnlimArgs'))
-					.simpleFuncWithoutArgs(
-						CreateCallbackLogger('simpleObject', 'simpleFuncWithoutArgs'));
+					var params = {
+						simple: 'object',
+						with: 'some',
+						param: ', wow!'
+					};
 
-				/*funcs without callback*/
-				simpleObject
-					.simpleFunc(params)
-					.simpleFuncWithUnlimArgs(false, '1', 2, 3)
-					.simpleFuncWithoutArgs();
-			});
+					/*event*/
+					simpleObject
+						.on(
+							'eventWithMyOptions',
+							CreateEventLogger('simpleObject', 'eventWithMyOptions'))
+						.on(
+							'eventWithoutArgs',
+							CreateEventLogger('simpleObject', 'eventWithoutArgs'))
+						.on(
+							'eventWithUnlimArgs',
+							CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
+						.on(
+							'10secIntervalEvent',
+							CreateEventLogger('simpleObject', '10secIntervalEvent'));
 
+					/*funcs with callback*/
+					simpleObject
+						.simpleFunc(
+							params,
+							CreateCallbackLogger('simpleObject', 'simpleFunc'))
+						.simpleFuncWithUnlimArgs(
+							false, '1', 2, {
+								3: new Date()
+							},
+							CreateCallbackLogger('simpleObject', 'simpleFuncWithUnlimArgs'))
+						.simpleFuncWithoutArgs(
+							CreateCallbackLogger('simpleObject', 'simpleFuncWithoutArgs'))
+						.simpleFuncWith10SecDelay(
+							CreateCallbackLogger('simpleObject', 'simpleFuncWith10SecDelay'));
+
+					/*funcs without callback*/
+					simpleObject
+						.simpleFunc(params)
+						.simpleFuncWithUnlimArgs(false, '1', 2, 3)
+						.simpleFuncWithoutArgs()
+						.simpleFuncWith10SecDelay();
+				}).init();
+	})();
 
 	function CreateEventLogger(objectName, eventName) {
 		return function() {
