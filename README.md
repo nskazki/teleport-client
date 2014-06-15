@@ -27,23 +27,35 @@ bower install teleport-client --save
 var teleportClient = new TeleportClient({
 	serverAddress: "ws://localhost:8000",
 	isDebug: true
-})
-	.on('info', someHandler)
-	.on('debug', someHandler)
-	.on('error', someHandler)
-	.init();
-
-teleportClient.on('ready', function(objectsProps) {
-	console.log(objectsProps);
-
-	teleportClient.objects.ipBox
-		.getIps(someCallback)
-		.on('newIps', someHandler);
 });
+
+(function initTeleportClient() {
+	teleportClient
+		.on('debug', console.debug.bind(console))
+		.on('info', console.info.bind(console))
+		.on('warn', console.warn.bind(console))
+		.on('error', console.error.bind(console))
+		.on('close', function() {
+			console.warn({
+				desc: "[main] Warn: Соединение с TeleportServer закрылось, будет выполненно переподключение.",
+				serverAddress: "ws://nskazki.dyndns.info:8000"
+			});
+
+			initTeleportClient();
+		})
+		.on('ready', function(objectsProps) {
+			console.log(objectsProps);
+
+			teleportClient.objects.ipBox
+				.getIps(someCallback)
+				.on('newIps', someHandler);
+		}).init();
+})();
 ```
 
 <h5>Публичные методы:</h5>
- `init` - метод инициирующий объект.
+ * `init` - метод инициирующий объект.
+ * `destroy` - метод прекращающий работу объекта.
 
 <h5>Events:</h5>
  * `debug` - логированние клиент-серверного обмена сообщениями. Выбрасывается с одним аргументом, содержащим лог объект.
@@ -51,4 +63,5 @@ teleportClient.on('ready', function(objectsProps) {
  * `warn` - логированние проблем не влияющих на дальнейшую работы программы. Например получение неожиданного сообщения от сервера, или возврат результата выполнения команды без хендлера. Выбрасывается с одним аргументом.
  * `error` - логированние получение которые делают программу неработоспособной. В частности ошибка соединения с сервером. Выбрасывается с одним аргументом.
 
- * `ready` - признак успешного соединения с сервром и регистрации всех серверных объектов. Выбрасывается с одним аргументом, содержащим свойства зарегистрированных объектов. 
+ * `ready` - признак успешного соединения с сервром и регистрации всех серверных объектов. Выбрасывается с одним аргументом, содержащим свойства зарегистрированных объектов. Выбрасывается без аргументов.
+ * `close` - признак разрыва соединения с сервером, при этом все серверные объекты уничтожаются, подписчики как с них, так и с TeleportClient снимаются, всем каллбекам еще не получившим результат с сервера будет возвращена ошибка. Возникает если вызван метод `destroy` явно из кода, или в следствии ошибки содинения с Web Socket Server. Выбрасывается без аргументов.
