@@ -15,7 +15,10 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 	window.teleportClient = new TeleportClient({
 		serverAddress: "ws://nskazki.dyndns.info:8000",
 		//serverAddress: "ws://localhost:8000",
-		isDebug: false
+		reconnect: {
+			isUse: true,
+			delay: 3000
+		}
 	});
 
 	(function initTeleportClient() {
@@ -26,66 +29,66 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 			.on('warn', console.warn.bind(console))
 			.on('error', console.error.bind(console))
 			.on('close', function() {
-				console.warn({
-					desc: "[main] Warn: Соединение с TeleportServer закрылось, будет выполненно переподключение.",
-					serverAddress: "ws://nskazki.dyndns.info:8000",
-					delay: 1000*20
-				});
+				// console.warn({
+				// 	desc: "[main] Warn: Соединение с TeleportServer закрылось, будет выполненно переподключение.",
+				// 	serverAddress: "ws://nskazki.dyndns.info:8000",
+				// 	delay: 1000*20
+				// });
 
-				setTimeout(initTeleportClient, 1000*20);
+				// setTimeout(initTeleportClient, 1000*20);
 			})
-			.on(
-				'ready',
-				CreateEventLogger('teleportClient', 'ready'))
-			.on(
-				'ready',
-				function(objectsProps) {
-					//for Debuging
-					window.simpleObject = teleportClient.objects.simpleObject;;
+		// .on(
+		// 	'ready',
+		// 	CreateEventLogger('teleportClient', 'ready'))
+		.on(
+			'ready',
+			function(objectsProps) {
+				//for Debuging
+				window.simpleObject = teleportClient.objects.simpleObject;;
 
-					var params = {
-						simple: 'object',
-						with: 'some',
-						param: ', wow!'
-					};
+				// var params = {
+				// 	simple: 'object',
+				// 	with: 'some',
+				// 	param: ', wow!'
+				// };
 
-					/*event*/
-					simpleObject
-						.on(
-							'eventWithMyOptions',
-							CreateEventLogger('simpleObject', 'eventWithMyOptions'))
-						.on(
-							'eventWithoutArgs',
-							CreateEventLogger('simpleObject', 'eventWithoutArgs'))
-						.on(
-							'eventWithUnlimArgs',
-							CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
-						.on(
-							'10secIntervalEvent',
-							CreateEventLogger('simpleObject', '10secIntervalEvent'));
+				// /*event*/
+				// simpleObject
+				// 	.on(
+				// 		'eventWithMyOptions',
+				// 		CreateEventLogger('simpleObject', 'eventWithMyOptions'))
+				// 	.on(
+				// 		'eventWithoutArgs',
+				// 		CreateEventLogger('simpleObject', 'eventWithoutArgs'))
+				// 	.on(
+				// 		'eventWithUnlimArgs',
+				// 		CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
+				// 	.on(
+				// 		'10secIntervalEvent',
+				// 		CreateEventLogger('simpleObject', '10secIntervalEvent'));
 
-					/*funcs with callback*/
-					simpleObject
-						.simpleFunc(
-							params,
-							CreateCallbackLogger('simpleObject', 'simpleFunc'))
-						.simpleFuncWithUnlimArgs(
-							false, '1', 2, {
-								3: new Date()
-							},
-							CreateCallbackLogger('simpleObject', 'simpleFuncWithUnlimArgs'))
-						.simpleFuncWithoutArgs(
-							CreateCallbackLogger('simpleObject', 'simpleFuncWithoutArgs'))
-						.simpleFuncWith10SecDelay(
-							CreateCallbackLogger('simpleObject', 'simpleFuncWith10SecDelay'));
+				// /*funcs with callback*/
+				// simpleObject
+				// 	.simpleFunc(
+				// 		params,
+				// 		CreateCallbackLogger('simpleObject', 'simpleFunc'))
+				// 	.simpleFuncWithUnlimArgs(
+				// 		false, '1', 2, {
+				// 			3: new Date()
+				// 		},
+				// 		CreateCallbackLogger('simpleObject', 'simpleFuncWithUnlimArgs'))
+				// 	.simpleFuncWithoutArgs(
+				// 		CreateCallbackLogger('simpleObject', 'simpleFuncWithoutArgs'))
+				// 	.simpleFuncWith10SecDelay(
+				// 		CreateCallbackLogger('simpleObject', 'simpleFuncWith10SecDelay'));
 
-					/*funcs without callback*/
-					simpleObject
-						.simpleFunc(params)
-						.simpleFuncWithUnlimArgs(false, '1', 2, 3)
-						.simpleFuncWithoutArgs()
-						.simpleFuncWith10SecDelay();
-				}).init();
+				// /*funcs without callback*/
+				// simpleObject
+				// 	.simpleFunc(params)
+				// 	.simpleFuncWithUnlimArgs(false, '1', 2, 3)
+				// 	.simpleFuncWithoutArgs()
+				// 	.simpleFuncWith10SecDelay();
+			}).init();
 	})();
 
 	function CreateEventLogger(objectName, eventName) {
