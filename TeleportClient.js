@@ -192,8 +192,8 @@ need include:
 		};
 
 		TeleportClient.prototype._funcWsClientReconnect = function() {
-			this.emit('debug', {
-				desc: "Будет выполненно переподключение к серверу.",
+			this.emit('info', {
+				desc: "[TeleportClient] Info: Будет выполненно переподключение к серверу.",
 				delay: this._optionAutoReconnect,
 				reconnectCount: this._valueReconnectionCount
 			});
@@ -444,6 +444,10 @@ need include:
 				});
 
 				this._funcWsConnectInitConnectionCompleted();
+
+				this.emit('info', {
+					desc: "[TeleportClient] Info: Соединение с сервером востановленно. Стоить заметить, что разъединение произошло, из-за перезапуска сервера."
+				});
 				this.emit('reconnected');
 			}
 		};
@@ -451,7 +455,7 @@ need include:
 		TeleportClient.prototype._funcInternalHandlerSetPeerId = function(message) {
 			if (message.error) {
 				var errorInfo = {
-					desc: "[TeleportClient] Error: запрос на установку peerId, вернул ошибку.",
+					desc: "[TeleportClient] Error: Не удалось восстановить соединение с сервером, запрос на установку peerId, вернул ошибку.",
 					error: message.error,
 					message: message
 				};
@@ -466,6 +470,9 @@ need include:
 
 				this._funcWsConnectInitReconnectionCompleted();
 
+				this.emit('info', {
+					desc: "[TeleportClient] Info: Соединение с сервером востановленно."
+				});
 				this.emit('reconnected');
 			}
 		};
@@ -492,6 +499,11 @@ need include:
 				}
 
 				this._funcWsConnectInitConnectionCompleted();
+
+				this.emit('info', {
+					desc: "[TeleportClient] Info: серверные объекты инициализированны, клиент готов к работе.",
+					serverObjectsProps: this._valueServerObjectsProps
+				});
 
 				this.emit('ready', this._valueServerObjectsProps);
 			}
@@ -563,6 +575,10 @@ need include:
 		};
 
 		TeleportClient.prototype._funcWsOnClose = function() {
+			this.emit('warn', {
+				desc: "[TeleportClient] Warn: Соединение с сервером потерянно."
+			});
+
 			if (this._optionAutoReconnect !== false) this._funcWsClientReconnect();
 			else {
 				this._funcWsClientClose();
