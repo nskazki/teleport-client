@@ -39,11 +39,11 @@ need include:
 		error 	
 
 		ready
-
-		reconncted
-		reconnecting
-
 		close
+		destroyed
+		
+		reconnected
+		reconnecting
 */
 
 "use strict";
@@ -82,7 +82,7 @@ need include:
 			формат принимаего аргумента:
 			options = {
 				serverAddress: "ws://localhost:8000",
-				isDebug: true
+				autoReconnect: 3000
 			}
 
 			формат инициалируемых полей:
@@ -93,21 +93,19 @@ need include:
 
 			this.objects = {
 				'someServerObjectName': {
-					__events__ = ['firstPermitedEventName', 'secondPermitedEventName'],
-					__methods__ = ['firstMethodName', 'secondMethodName'],
-					firstMethodName: function() {...},
-					secondMethodName: function() {...},
+					__events__: ['firstPermitedEventName', 'secondPermitedEventName'],
+					__methods__: ['firstMethodName', 'secondMethodName'],
+					__destroy__: function: {...},
+					firstMethodName: function(args, secondArg, callback) {...},
+					secondMethodName: function(callback) {...},
 				}
 			}
 
 		*/
 		function TeleportClient(options) {
 			//options
-			this._optionWsServerAddress = options.serverAddress;
-			this._optionReconnect = options.reconnect || {
-				isUse: true,
-				delay: 3000
-			};
+			this._optionWsServerAddress = options.serverAddress || "ws://localhost:8000";
+			this._optionAutoReconnect = (options.autoReconnect === undefined) ? 3000 : options.autoReconnect;
 
 			//end options
 
@@ -146,52 +144,35 @@ need include:
 		/**
 			Метод деструктор.
 			Снимает слушателей с WS Client.
-			Cнимает слушателей со всех серверных объектов.
 			Очищает серверные объекты.
 			Всем каллбекам ожидающим результат выполнения серверного метода будет возвращена ошибка.
 			Выбрасываю close
-			Снимаю всех слушателей с this
 			И ставлю флаг не инициализированн.
 
 		*/
-		TeleportClient.prototype.destroy = function(isError) {
+		TeleportClient.prototype.destroy = function() {
 			if (this._valueIsInit) {
-				if (isError) {
-					this.emit('error', {
-						desc: '[TeleportClient] Error: Работа клиента прекращена в следствии ошибки, на все калбеки будет возвращена ошибка, подписчики на серверные события будут пудаленны.',
-						error: isError
-					});
-				} else {
-					this.emit('info', {
-						desc: '[TeleportClient] Info: Работа клиента штатно прекращена, на все калбеки будет возвращена ошибка, подписчики на серверные события будут удаленны.'
-					});
-				}
+				this.emit('info', {
+					desc: '[TeleportClient] Info: Работа клиента штатно прекращена, на все калбеки будет возвращена ошибка, соединение с сервером закрываю.'
+				});
 
-				this._funcWsClientClose();
+				if (this._valueWsClient) {
+					this._funcWsClientClose();
+					this.emit('close');
+				}
 
 				for (var objectName in this.objects) {
 					this.objects[objectName].__destroy__();
 				}
+
 				this.objects = {};
 				this._valueServerObjectsProps = {};
 
 				this._funcCloseAllRequests();
 
-				this
-					.removeAllListeners('debug')
-					.removeAllListeners('info')
-					.removeAllListeners('warn')
-					.removeAllListeners('error')
-					.removeAllListeners('ready');
-
 				this._valueIsInit = false;
 
-				var closeListeners = this.listeners('close');
-				this.emit('close');
-
-				closeListeners.forEach(function(listener) {
-					this.removeListener('close', listener);
-				}.bind(this));
+				this.emit('destroyed');
 			}
 
 			return this;
@@ -213,16 +194,16 @@ need include:
 		TeleportClient.prototype._funcWsClientReconnect = function() {
 			this.emit('debug', {
 				desc: "Будет выполненно переподключение к серверу.",
-				delay: this._optionReconnect.delay,
+				delay: this._optionAutoReconnect,
 				reconnectCount: this._valueReconnectionCount
 			});
 
-			reconnectCount: this._valueReconnectionCount++;
+			this._valueReconnectionCount++;
 
 			this.emit('reconnecting');
 			this._funcWsClientClose();
 
-			setTimeout(this._funcWsClientInit.bind(this), this._optionReconnect.delay);
+			setTimeout(this._funcWsClientInit.bind(this), this._optionAutoReconnect);
 		};
 
 		TeleportClient.prototype._funcWsClientClose = function() {
@@ -232,6 +213,8 @@ need include:
 			this._valueWsClient.onerror = null;
 
 			this._valueWsClient.close();
+
+			this._valueWsClient = null;
 		};
 
 		//end ws client
@@ -389,6 +372,7 @@ need include:
 			if (message.error) {
 				var errorInfo = {
 					desc: "[TeleportClient] Error: запрос на получение timestamp, вернул ошибку.",
+					error: message.error,
 					message: message
 				};
 
@@ -398,7 +382,9 @@ need include:
 
 				if (!this._valueReconnectionCount) {
 					this.emit('debug', {
-						desc: "[TeleportClient] Debug: Полученный timestamp, это первое подключение к серверу, запрашиваю peerId."
+						desc: "[TeleportClient] Debug: Полученный timestamp, это первое подключение к серверу, запрашиваю peerId.",
+						timestamp: newServerTimestamp,
+						message: message
 					});
 
 					this._valueServerTimestamp = newServerTimestamp;
@@ -407,7 +393,9 @@ need include:
 					this.emit('debug', {
 						desc: "[TeleportClient] Debug: Полученный timestamp отличается от прошлого, сервер был перезапущенн, " +
 							"запрашиваю новый peerId, на все калбеки ожидающие результат возвращаю ошибку.",
-						message: message
+						oldTimestamp: this._valueServerTimestamp,
+						newTimestamp: newServerTimestamp,
+						message: message,
 					});
 
 					this._valueServerTimestamp = newServerTimestamp;
@@ -417,6 +405,7 @@ need include:
 				} else {
 					this.emit('debug', {
 						desc: "[TeleportClient] Debug: Полученный timestamp, он соответствует старому, отправляю на сервер свой peerId.",
+						timestamp: newServerTimestamp,
 						message: message
 					});
 
@@ -429,6 +418,7 @@ need include:
 			if (message.error) {
 				var errorInfo = {
 					desc: "[TeleportClient] Error: запрос на получение peerId, вернул ошибку.",
+					error: message.error,
 					message: message
 				};
 
@@ -448,13 +438,13 @@ need include:
 
 				this.emit('debug', {
 					desc: "[TeleportClient] Debug: Полученн peerId, свойства серверных объектов билы полученны и применены ранее. " +
-						"Так как это новый экземпляр извещаю его о успешном подключении.",
+						"Так как это новый экземпляр сервера, то извещаю его о успешном подключении.",
 					peerId: this._valuePeerId,
 					message: message
 				});
 
 				this._funcWsConnectInitConnectionCompleted();
-				this.emit('reconncted');
+				this.emit('reconnected');
 			}
 		};
 
@@ -462,6 +452,7 @@ need include:
 			if (message.error) {
 				var errorInfo = {
 					desc: "[TeleportClient] Error: запрос на установку peerId, вернул ошибку.",
+					error: message.error,
 					message: message
 				};
 
@@ -475,7 +466,7 @@ need include:
 
 				this._funcWsConnectInitReconnectionCompleted();
 
-				this.emit('reconncted');
+				this.emit('reconnected');
 			}
 		};
 
@@ -483,6 +474,7 @@ need include:
 			if (message.error) {
 				var errorInfo = {
 					desc: "[TeleportClient] Error: запрос на получение свойств серверных объектов, вернул ошибку.",
+					error: message.error,
 					message: message
 				};
 
@@ -499,8 +491,9 @@ need include:
 					this._funcObjectCreate(objectName);
 				}
 
-				this.emit('ready', this._valueServerObjectsProps);
 				this._funcWsConnectInitConnectionCompleted();
+
+				this.emit('ready', this._valueServerObjectsProps);
 			}
 		};
 
@@ -570,8 +563,11 @@ need include:
 		};
 
 		TeleportClient.prototype._funcWsOnClose = function() {
-			if (this._optionReconnect.isUse) this._funcWsClientReconnect();
-			else this.destroy('Соединение с сервером разорванно.');
+			if (this._optionAutoReconnect !== false) this._funcWsClientReconnect();
+			else {
+				this._funcWsClientClose();
+				this.emit('close');
+			}
 		};
 
 		//end server
@@ -594,6 +590,13 @@ need include:
 			функцию _funcWsSendMessage запилить, но я не хочу, это усложнит код и вот.
 
 		*/
+
+		/**
+			Events:
+
+				__destroyed__
+		*/
+
 		util.inherits(TeleportedObject, EventEmitter);
 
 		function TeleportedObject(objectProps) {
@@ -602,11 +605,11 @@ need include:
 		};
 
 		TeleportedObject.prototype.__destroy__ = function() {
-			this.removeAllListeners();
-
 			this.__methods__.forEach(function(methodName) {
 				delete this[methodName];
 			}.bind(this));
+
+			this.emit('__destroyed__');
 		}
 
 		/**
