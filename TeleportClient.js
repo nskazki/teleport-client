@@ -44,6 +44,11 @@ need include:
 		
 		reconnected
 		reconnecting
+
+		reconnectedToNewServer
+		reconnectedToOldServer
+
+		serverObjectsChanged
 */
 
 "use strict";
@@ -77,25 +82,72 @@ need include:
 		util.inherits(TeleportClient, EventEmitter);
 
 		/**
-			Конструктор класса TeleportClient, 
+			Это RPC клиент, умеет вызывать методы телепортированных объектов и получать собития ими выбрасываемые. 
+			Также умеет восстанавливать соединение с сервером в случае разрыва соединения.
+
+			Конструктор класса TeleportClient, принимает единственным параметром объект с опциями,
+			возвращает новый неинециализированный объект класса TeleportClient
 			
-			формат принимаего аргумента:
+			------------------------
+
 			options = {
 				serverAddress: "ws://localhost:8000",
 				autoReconnect: 3000
 			}
 
+			serverAddress - адрес TeleportServer
+				default: "ws://localhost:8000"
+
+			autoReconnect - время задержки перед попыткой переподключния к серверу.
+				если число - то это время задержки в миллесекундах
+				если false - то переподключения не будет выполненно.
+				default: 3000 msec
+
+			-----------------------
+
 			формат инициалируемых полей:
-			this._valueRequests = [
-				1: someCallback,
-				2: secondCallback
-			]
+
+			Массив с калбеками для вызванных телепортированных методов.
+			в каждом сообщение уходящем на сервер есть поле requestId, значение в этом поле это индекс каллбека в этом массиве:
+			
+				this._valueRequests = [
+					1: someCallback,
+					2: secondCallback
+				]
+			
+			Объект содержащий свойства телепортируемых объектов, которые проинициализируют объекты в this.objects
+			Получаю при первом успешном соединении с сервером.
+
+			Если произойдет разъединение с сервером по причине грустных интернетов, то перезапрашивать его нет смысла, потому что на сервере ничего не поменялось.
+			Если же разъединило потому что сервер был перезапущенн, то свойства телепортируеммых объектов будут перезапрошенны.
+				* Если они не изменились, то работа будет продолженна.
+				* Или изменились, то будет выброшенно событие `serverObjectsChanged` 
+				 * и я бы на месте словившего его программиста вывыел пользователю предложение перезагрузить страницу.
+				   Потому что изменение набора серверных объектов неминуемо (обычно) влечет изменение клиентского сценария, и чтобы его обновить
+				   нужно обновить страничку (насколько мне известно нагорячую js скрипты подменять нельзя).
+				 * Также несмотря на то что были полученны новые свойства,
+				   они не будут помещенны в this._valueServerObjectsProps и this.objects не будет измененн.
+				   измениться только флаг this.isServerObjectChanged = true;
+
+				this._valueServerObjectsProps = {
+					'someServerObjectName': {
+						events: ['firstPermitedEventName', 'secondPermitedEventName'],
+						methods: ['firstMethodName', 'secondMethodName']
+					}, ...
+				}
+
+			Объект содержащий в себе проинициализированные телепортированные объекты.
+			У них есть несколько служебных полей и методы унаследованные от класса EventEmetter.
+			
+			Методы создаваемые внутри телепортированного объекта разбирают приходящий псевдомассив arguments 
+			выделяют из него аргументы для метода и калбек (если калбека нет, то создается заглушка)
+			запросу присваеватеся requestId, каллбек под этим id помещается в this._valueRequests
+			и запрос отправляется на сервер.
 
 			this.objects = {
 				'someServerObjectName': {
 					__events__: ['firstPermitedEventName', 'secondPermitedEventName'],
 					__methods__: ['firstMethodName', 'secondMethodName'],
-					__destroy__: function: {...},
 					firstMethodName: function(args, secondArg, callback) {...},
 					secondMethodName: function(callback) {...},
 				}
@@ -116,16 +168,18 @@ need include:
 			this._valueIsInit = false;
 
 			this._valuePeerId = null;
-			this._valuePeerTimestamp = new Date();
+			this._valuePeerTimestamp = null;
 
 			this._valueServerTimestamp = null;
+			this._valueIsReadyEmited = false;
 
-			this._valueReconnectionCount = 0;
+			this._valueConnectInitState = null;
 
 			//end private
 
 			//public
 			this.objects = {};
+			this.isServerObjectChanged = false;
 
 			//end public
 		}
@@ -133,6 +187,7 @@ need include:
 		//public
 		TeleportClient.prototype.init = function() {
 			if (!this._valueIsInit) {
+				this._valuePeerTimestamp = new Date();
 				this._funcWsClientInit();
 
 				this._valueIsInit = true;
@@ -142,35 +197,29 @@ need include:
 		};
 
 		/**
-			Метод деструктор.
-			Снимает слушателей с WS Client.
-			Очищает серверные объекты.
-			Всем каллбекам ожидающим результат выполнения серверного метода будет возвращена ошибка.
-			Выбрасываю close
-			И ставлю флаг не инициализированн.
+			Метод деструктов закрывает соединение с сервером, вызывает все ожидающие результат калеки с ошибкой.
+			очищает несколько служебных полей и наконец выбрасывает `destroyed`
 
 		*/
 		TeleportClient.prototype.destroy = function() {
 			if (this._valueIsInit) {
 				this.emit('info', {
-					desc: '[TeleportClient] Info: Работа клиента штатно прекращена, на все калбеки будет возвращена ошибка, соединение с сервером закрываю.'
+					desc: '[TeleportClient] Info: Работа клиента штатно прекращена, на все калбеки будет возвращена ошибка, соединение с сервером будет закрыто.'
 				});
+
+				this.objects = {};
+				this._valueServerObjectsProps = {};
+				this._funcCloseAllRequests();
+				this._valueIsInit = false;
+				this._valuePeerId = null;
+				this._valueServerTimestamp = null;
+				this._valuePeerTimestamp = null;
+				this._valueIsReadyEmited = false;
 
 				if (this._valueWsClient) {
 					this._funcWsClientClose();
 					this.emit('close');
 				}
-
-				for (var objectName in this.objects) {
-					this.objects[objectName].__destroy__();
-				}
-
-				this.objects = {};
-				this._valueServerObjectsProps = {};
-
-				this._funcCloseAllRequests();
-
-				this._valueIsInit = false;
 
 				this.emit('destroyed');
 			}
@@ -194,14 +243,11 @@ need include:
 		TeleportClient.prototype._funcWsClientReconnect = function() {
 			this.emit('info', {
 				desc: "[TeleportClient] Info: Будет выполненно переподключение к серверу.",
-				delay: this._optionAutoReconnect,
-				reconnectCount: this._valueReconnectionCount
+				delay: this._optionAutoReconnect
 			});
 
-			this._valueReconnectionCount++;
-
+			if (this._valueWsClient) this._funcWsClientClose();
 			this.emit('reconnecting');
-			this._funcWsClientClose();
 
 			setTimeout(this._funcWsClientInit.bind(this), this._optionAutoReconnect);
 		};
@@ -220,11 +266,14 @@ need include:
 		//end ws client
 
 		//close all callbacks
-		TeleportClient.prototype._funcCloseAllRequests = function() {
+		TeleportClient.prototype._funcCloseAllRequests = function(isInitError) {
+			var errorInfo = (isInitError) ? "[TeleportClient] Error: Произошла ошибка при регистрация клиента на сервере, поэтому результат выполнения команды никогда не будет возвращенн." :
+				"[TeleportClient] Error: Соединение с сервером востановленно, но это новый экземпляр сервера, поэтому результат выполнения команды никогда не будет возвращенн.";
+
 			while (this._valueRequests.length) {
 				var callback = this._valueRequests.shift();
 				if (callback) callback({
-					desc: "[TeleportClient] Error: Соединение с сервером закрылось, поэтому результат выполнения метода не будет полученн."
+					desc: errorInfo
 				});
 			}
 		};
@@ -232,7 +281,7 @@ need include:
 		//end close all callbacks
 
 		//connction init
-		TeleportClient.prototype._funcWsConnectInitGetServerTimestamp = function() {
+		TeleportClient.prototype._funcWsGetServerTimestamp = function() {
 			this.emit('debug', {
 				desc: "[TeleportClient] Debug: отправил запрос на получение timestamp."
 			})
@@ -243,7 +292,7 @@ need include:
 			});
 		};
 
-		TeleportClient.prototype._funcWsConnectInitGetPeerId = function() {
+		TeleportClient.prototype._funcWsGetPeerId = function() {
 			this.emit('debug', {
 				desc: "[TeleportClient] Debug: отправил запрос на получение peerId.",
 				timestamp: this._valuePeerTimestamp
@@ -258,7 +307,7 @@ need include:
 			});
 		};
 
-		TeleportClient.prototype._funcWsConnectInitSetPeerId = function() {
+		TeleportClient.prototype._funcWsSetPeerId = function() {
 			this.emit('debug', {
 				desc: "[TeleportClient] Debug: отправил запрос на подтвержение уже существующего peerId.",
 				timestamp: this._valuePeerTimestamp,
@@ -275,7 +324,7 @@ need include:
 			});
 		};
 
-		TeleportClient.prototype._funcWsConnectInitGetObjectsProps = function() {
+		TeleportClient.prototype._funcWsGetObjectsProps = function() {
 			this.emit('debug', {
 				desc: "[TeleportClient] Debug: отправил запрос на получение свойств серверных объектов.",
 				peerId: this._valuePeerId
@@ -290,7 +339,7 @@ need include:
 			});
 		};
 
-		TeleportClient.prototype._funcWsConnectInitConnectionCompleted = function() {
+		TeleportClient.prototype._funcWsConnectionCompleted = function() {
 			this.emit('debug', {
 				desc: "[TeleportClient] Debug: отправил подтверждение завершения подключения.",
 				peerId: this._valuePeerId
@@ -305,7 +354,7 @@ need include:
 			});
 		};
 
-		TeleportClient.prototype._funcWsConnectInitReconnectionCompleted = function() {
+		TeleportClient.prototype._funcWsReconnectionCompleted = function() {
 			this.emit('debug', {
 				desc: "[TeleportClient] Debug: отправил подтверждение завершения переподключения.",
 				peerId: this._valuePeerId
@@ -351,12 +400,12 @@ need include:
 			if (funcName) {
 				this[funcName].bind(this)(message);
 			} else {
-				var errorInfo = {
+				var warnInfo = {
 					desc: "[TeleportClient] Warn: пришел ответ на неожиданную команду: " + message.internalCommand,
 					message: message
 				};
 
-				this.emit("warn", errorInfo);
+				this.emit("warn", warnInfo);
 			}
 		};
 
@@ -368,49 +417,83 @@ need include:
 			'getObjects': '_funcInternalHandlerGetObjects'
 		};
 
+		/**
+			init() -->  _funcWsClientInit -->
+			_funcWsGetServerTimestamp --> _funcInternalHandlerGetTimestamp  -->
+			_funcWsGetPeerId --> _funcInternalHandlerGetPeerId -->
+			_funcWsGetObjectsProps --> _funcInternalHandlerGetObjects --> emit('ready') -->
+			_funcWsConnectionCompleted 
+
+			----------------------------------------------------------------------------------------------
+
+			_valueWsClient.on('close') --> (1)
+
+				(1) --(autoReconnect !== false)--> 
+				_funcWsClientReconnect --> _funcWsClientInit -->
+				_funcWsGetServerTimestamp --> _funcInternalHandlerGetTimestamp --> (1.1)
+
+					(1.1) --(old time stamp)-->
+					_funcWsSetPeerId --> _funcInternalHandlerSetPeerId --> (1.1.1)
+
+						(1.1.1) --(client reconnect timeout)--> 
+						_funcWsGetPeerId --> _funcInternalHandlerGetPeerId --> 
+						emit('reconnected') --> emit('reconnectedToNewServer') --> _funcCloseAllRequests -->
+						_funcWsConnectionCompleted 
+
+						(1.1.1) --(peer found)-->
+						emit('reconnected') --> emit('reconnectedToOldServer') -->
+						_funcWsReconnectionCompleted
+
+					(1.1) --(new time stamp)-->
+					_funcWsGetPeerId --> _funcInternalHandlerGetPeerId --> 
+					_funcWsGetObjectsProps --> _funcInternalHandlerGetObjects --> (1.1.2)
+
+						(1.1.2) --(old props)-->
+						emit('reconnected') --> emit('reconnectedToNewServer') --> _funcCloseAllRequests -->
+						_funcWsConnectionCompleted 
+				
+						(1.1.2) --(new props)-->
+						emit('reconnected') --> emit('reconnectedToNewServer') --> emit('serverObjectsChanged') --> isServerObjectChanged = true -->
+						_funcWsConnectionCompleted
+				
+				(1) --(autoReconnect == false)-->
+				_funcWsClientClose --> emit('close');
+		*/
+
 		TeleportClient.prototype._funcInternalHandlerGetTimestamp = function(message) {
-			if (message.error) {
-				var errorInfo = {
-					desc: "[TeleportClient] Error: запрос на получение timestamp, вернул ошибку.",
-					error: message.error,
+			var newServerTimestamp = message.result;
+
+			if (!this._valueIsReadyEmited) {
+				this.emit('debug', {
+					desc: "[TeleportClient] Debug: Полученн timestamp, это первое подключение к серверу, запрашиваю peerId.",
+					timestamp: newServerTimestamp,
 					message: message
-				};
+				});
 
-				this.emit("error", errorInfo);
+				this._valueServerTimestamp = newServerTimestamp;
+				this._funcWsGetPeerId();
+			} else if (newServerTimestamp != this._valueServerTimestamp) {
+				this.emit('debug', {
+					desc: "[TeleportClient] Debug: Полученный timestamp отличается от прошлого, сервер был перезапущенн, " +
+						"запрашиваю новый peerId, на все калбеки ожидающие результат возвращаю ошибку.",
+					requestCount: this._valueRequests.length,
+					oldTimestamp: this._valueServerTimestamp,
+					newTimestamp: newServerTimestamp,
+					message: message,
+				});
+
+				this._valueServerTimestamp = newServerTimestamp;
+				this._funcCloseAllRequests();
+
+				this._funcWsGetPeerId();
 			} else {
-				var newServerTimestamp = message.result;
+				this.emit('debug', {
+					desc: "[TeleportClient] Debug: Полученн timestamp, он соответствует старому, отправляю на сервер свой peerId.",
+					timestamp: newServerTimestamp,
+					message: message
+				});
 
-				if (!this._valueReconnectionCount) {
-					this.emit('debug', {
-						desc: "[TeleportClient] Debug: Полученный timestamp, это первое подключение к серверу, запрашиваю peerId.",
-						timestamp: newServerTimestamp,
-						message: message
-					});
-
-					this._valueServerTimestamp = newServerTimestamp;
-					this._funcWsConnectInitGetPeerId();
-				} else if (newServerTimestamp != this._valueServerTimestamp) {
-					this.emit('debug', {
-						desc: "[TeleportClient] Debug: Полученный timestamp отличается от прошлого, сервер был перезапущенн, " +
-							"запрашиваю новый peerId, на все калбеки ожидающие результат возвращаю ошибку.",
-						oldTimestamp: this._valueServerTimestamp,
-						newTimestamp: newServerTimestamp,
-						message: message,
-					});
-
-					this._valueServerTimestamp = newServerTimestamp;
-					this._funcCloseAllRequests();
-
-					this._funcWsConnectInitGetPeerId();
-				} else {
-					this.emit('debug', {
-						desc: "[TeleportClient] Debug: Полученный timestamp, он соответствует старому, отправляю на сервер свой peerId.",
-						timestamp: newServerTimestamp,
-						message: message
-					});
-
-					this._funcWsConnectInitSetPeerId();
-				}
+				this._funcWsSetPeerId();
 			}
 		};
 
@@ -423,7 +506,8 @@ need include:
 				};
 
 				this.emit("error", errorInfo);
-			} else if (!this._valueServerObjectsProps) {
+				this._funcCloseAllRequests('init error');
+			} else if (!this._valueIsReadyEmited) {
 				this._valuePeerId = message.result;
 
 				this.emit('debug', {
@@ -432,23 +516,19 @@ need include:
 					message: message
 				});
 
-				this._funcWsConnectInitGetObjectsProps();
+				this._funcWsGetObjectsProps();
 			} else {
 				this._valuePeerId = message.result;
 
-				this.emit('debug', {
-					desc: "[TeleportClient] Debug: Полученн peerId, свойства серверных объектов билы полученны и применены ранее. " +
-						"Так как это новый экземпляр сервера, то извещаю его о успешном подключении.",
-					peerId: this._valuePeerId,
-					message: message
-				});
-
-				this._funcWsConnectInitConnectionCompleted();
+				//свойства серверных объектов билы полученны и применены ранее. 
+				//Так как это новый экземпляр сервера, то извещаю его о успешном подключении.
+				this._funcWsConnectionCompleted();
 
 				this.emit('info', {
 					desc: "[TeleportClient] Info: Соединение с сервером востановленно. Стоить заметить, что разъединение произошло, из-за перезапуска сервера."
 				});
 				this.emit('reconnected');
+				this.emit('reconnectedToNewServer');
 			}
 		};
 
@@ -461,19 +541,16 @@ need include:
 				};
 
 				this.emit("error", errorInfo);
+				this._funcCloseAllRequests('init error');
 			} else {
-				this.emit('debug', {
-					desc: "[TeleportClient] Debug: peerId успешно установленн, отправляю подтверждение окончания регистрации.",
-					peerId: this._valuePeerId,
-					message: message
-				});
-
-				this._funcWsConnectInitReconnectionCompleted();
+				// peerId успешно установленн, отправляю подтверждение окончания регистрации.
+				this._funcWsReconnectionCompleted();
 
 				this.emit('info', {
 					desc: "[TeleportClient] Info: Соединение с сервером востановленно."
 				});
 				this.emit('reconnected');
+				this.emit('reconnectedToOldServer');
 			}
 		};
 
@@ -486,26 +563,22 @@ need include:
 				};
 
 				this.emit("error", errorInfo);
+				this._funcCloseAllRequests('init error');
 			} else {
-				this.emit('debug', {
-					desc: "[TeleportClient] Debug: свойства серверных объектов полученны, после того как они будут проинициализированны, на сервер будет отправленно извещение.",
-					message: message
-				});
-
 				this._valueServerObjectsProps = message.result;
 
 				for (var objectName in this._valueServerObjectsProps) {
 					this._funcObjectCreate(objectName);
 				}
 
-				this._funcWsConnectInitConnectionCompleted();
+				this._funcWsConnectionCompleted();
 
 				this.emit('info', {
 					desc: "[TeleportClient] Info: серверные объекты инициализированны, клиент готов к работе.",
 					serverObjectsProps: this._valueServerObjectsProps
 				});
-
 				this.emit('ready', this._valueServerObjectsProps);
+				this._valueIsReadyEmited = true;
 			}
 		};
 
@@ -517,7 +590,7 @@ need include:
 				desc: "[TeleportClient] Info: соединение с сервером установленно"
 			});
 
-			this._funcWsConnectInitGetServerTimestamp();
+			this._funcWsGetServerTimestamp();
 		}
 
 		/**
@@ -550,28 +623,72 @@ need include:
 			}
 		};
 
+		TeleportClient.prototype._funcQuaranteedSendMessage = function(message) {
+			if (this._valueWsClient && (this._valueWsClient.readyState == 1)) {
+				this._funcWsSendMessage(message);
+			} else {
+				this.emit('debug', {
+					desc: "[TeleportClient] Debug: Соединение с сервером сейчас отсутствует, когда оно будет восстановленно, это сообщение будет отпрваленно." +
+						"Если после востановления соединения станет ясно, что подключился клиент к новому экземпляру серверу (сервер перезапущенн), то сообщение отправленно не будет.",
+					message: message
+				});
+
+				var reconnectedOldServerHandler = (function(message) {
+					return function() {
+						this.emit('debug', {
+							desc: '[TeleportClient] Debug: Соединение востановленно с прежним экземпляром сервера, или установленно впервые, отправляется сообшение на сервер',
+							message: message
+						});
+
+						this.removeListener('reconnectedToNewServer', reconnectedNewServerHandler);
+						this._funcWsSendMessage(message);
+					}.bind(this);
+				}.bind(this))(message);
+
+				var reconnectedNewServerHandler = (function(message) {
+					return function() {
+						this.emit('debug', {
+							desc: '[TeleportClient] Debug: Переподключение произошло к новому экземпляру сервера, сообщение отправленно не будет.',
+							message: message
+						});
+
+						this.removeListener('reconnectedToOldServer', reconnectedOldServerHandler)
+					}.bind(this);
+				}.bind(this))(message);
+
+				this.once('reconnectedToNewServer', reconnectedNewServerHandler);
+				this.once('reconnectedToOldServer', reconnectedOldServerHandler);
+			}
+
+		}
+
 		TeleportClient.prototype._funcWsSendMessage = function(message) {
 			try {
 				var string = JSON.stringify(message);
-				this._valueWsClient.send(string);
+
+				if (this._valueWsClient && (this._valueWsClient.readyState == 1)) {
+					this._valueWsClient.send(string);
+				} else {
+					this.emit('warn', {
+						desc: "[TeleportClient] Warn: сообщение отправленно не будет, так как соединение с сервером потерянно.",
+						message: message
+					});
+				}
+
 			} catch (error) {
-				var errorInfo = {
+				this.emit("warn", {
 					desc: "[TeleportClient] Warn: ошибка отправки сообщения на сервер: " + error,
 					message: message,
 					error: error
-				};
-
-				this.emit("warn", errorInfo);
+				});
 			}
 		};
 
 		TeleportClient.prototype._funcWsOnError = function(error) {
-			var errorInfo = {
+			this.emit("error", {
 				desc: "[TeleportClient] Error: WebSocket Client выбросил ошибку: " + error,
 				error: error
-			};
-
-			this.emit("error", errorInfo);
+			});
 		};
 
 		TeleportClient.prototype._funcWsOnClose = function() {
@@ -607,11 +724,6 @@ need include:
 
 		*/
 
-		/**
-			Events:
-
-				__destroyed__
-		*/
 
 		util.inherits(TeleportedObject, EventEmitter);
 
@@ -619,14 +731,6 @@ need include:
 			this.__events__ = objectProps.events;
 			this.__methods__ = objectProps.methods;
 		};
-
-		TeleportedObject.prototype.__destroy__ = function() {
-			this.__methods__.forEach(function(methodName) {
-				delete this[methodName];
-			}.bind(this));
-
-			this.emit('__destroyed__');
-		}
 
 		/**
 			Метод инициализирующий принятый от сервера объект, 
@@ -696,7 +800,7 @@ need include:
 					requestId: requestId
 				});
 
-				this._funcWsSendMessage({
+				this._funcQuaranteedSendMessage({
 					objectName: objectName,
 					type: "command",
 					command: methodName,
