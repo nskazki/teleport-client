@@ -26,33 +26,33 @@ requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 			window.simpleObject = teleportClient.objects.simpleObject;;
 
 			/*events*/
-			// simpleObject
-			// 	.on(
-			// 		'eventWithMyOptions',
-			// 		CreateEventLogger('simpleObject', 'eventWithMyOptions'))
-			// 	.on(
-			// 		'eventWithoutArgs',
-			// 		CreateEventLogger('simpleObject', 'eventWithoutArgs'))
-			// 	.on(
-			// 		'eventWithUnlimArgs',
-			// 		CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
-			// 	.on(
-			// 		'10secIntervalEvent',
-			// 		CreateEventLogger('simpleObject', '10secIntervalEvent'));
+			simpleObject
+				.on(
+					'eventWithMyOptions',
+					CreateEventLogger('simpleObject', 'eventWithMyOptions'))
+				.on(
+					'eventWithoutArgs',
+					CreateEventLogger('simpleObject', 'eventWithoutArgs'))
+				.on(
+					'eventWithUnlimArgs',
+					CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
+				.on(
+					'10secIntervalEvent',
+					CreateEventLogger('simpleObject', '10secIntervalEvent'));
 
 
-			// /*funcs with callback*/
-			// simpleObject
-			// 	.func(
-			// 		'simepleParam',
-			// 		CreateCallbackLogger('simpleObject', 'func'))
-			// 	.funcWithoutArgs(
-			// 		CreateCallbackLogger('simpleObject', 'funcWithoutArgs'))
+			/*funcs with callback*/
+			simpleObject
+				.func(
+					'simepleParam',
+					CreateCallbackLogger('simpleObject', 'func'))
+				.funcWithoutArgs(
+					CreateCallbackLogger('simpleObject', 'funcWithoutArgs'))
 
-			// /*funcs without callback*/
-			// simpleObject
-			// 	.funcWithUnlimArgs(false, '1', 2, 3)
-			// 	.funcWith10SecDelay();
+			/*funcs without callback*/
+			simpleObject
+				.funcWithUnlimArgs(false, '1', 2, 3)
+				.funcWith10SecDelay();
 
 		}).init();
 
