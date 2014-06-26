@@ -217,13 +217,13 @@ need include:
 				this._valuePeerTimestamp = null;
 				this._valueIsReadyEmited = false;
 
-				this.removeAllListener('__reconnectedToOldServer__');
-				this.removeAllListener('__reconnectedToNewServer__');
-
 				if (this._valueWsClient) {
 					this._funcWsClose();
 					this.emit('close');
 				}
+
+				this.removeAllListeners('__reconnectedToOldServer__');
+				this.removeAllListeners('__reconnectedToNewServer__');
 
 				this.emit('destroyed');
 			}
@@ -305,10 +305,10 @@ need include:
 		};
 
 		TeleportClient.prototype._funcWsClose = function() {
-			this._valueWsClient.onmessage = null;
-			this._valueWsClient.onopen = null;
-			this._valueWsClient.onclose = null;
-			this._valueWsClient.onerror = null;
+			this._valueWsClient.onmessage = function() {};
+			this._valueWsClient.onopen = function() {};
+			this._valueWsClient.onclose = function() {};
+			this._valueWsClient.onerror = function() {};
 
 			this._valueWsClient.close();
 
