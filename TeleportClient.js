@@ -217,13 +217,13 @@ need include:
 				this._valuePeerTimestamp = null;
 				this._valueIsReadyEmited = false;
 
+				this.removeAllListeners('__reconnectedToOldServer__');
+				this.removeAllListeners('__reconnectedToNewServer__');
+
 				if (this._valueWsClient) {
 					this._funcWsClose();
 					this.emit('close');
 				}
-
-				this.removeAllListeners('__reconnectedToOldServer__');
-				this.removeAllListeners('__reconnectedToNewServer__');
 
 				this.emit('destroyed');
 			}
