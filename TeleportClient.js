@@ -23,6 +23,10 @@ need include:
 	
 	<script src="./js/someLibsFolder/my-helpers/EventEmitter.js" type="text/javascript"></script>
 	<script src="./js/someLibsFolder/my-helpers/util.js" type="text/javascript"></script>
+
+	or 
+
+	use browserify :)
 */
 
 /*
@@ -55,9 +59,9 @@ need include:
 
 (function(namespace) {
 
-	if (namespace.define) {
+	if (namespace.define && namespace.requirejs) {
 		/**
-			Раз есть define значит подключен requirejs.
+			Раз есть define и requirejs значит подключен requirejs.
 			Зависимости будет переданны в CreateTeleportServer, 
 			который вернет сформированный класс TeleportClient
 
@@ -68,6 +72,17 @@ need include:
 				'util'
 			],
 			CreateTeleportServer);
+	} else if (module && module.exports) {
+		/**
+			Раз есть module.exports значит browserify сейчас подключает этот модуль
+			Зависимости удовлетворит сам browserify. 
+	
+		*/
+
+		var EventEmitter = require('events').EventEmitter;
+		var util = require('util');
+
+		module.exports = CreateTeleportServer(EventEmitter, util);
 	} else {
 		/**
 			Иначе считаю, что TeleportClient подключен в "классический"
