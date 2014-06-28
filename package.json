@@ -1,6 +1,6 @@
 {
   "name": "teleport-client",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "browserify rpc client",
   "main": "browserify-TeleportClient.js",
   "scripts": {
