@@ -3,7 +3,7 @@
 requirejs.config({
 	baseUrl: 'bower_components/',
 	paths: {
-		TeleportClient: '../../TeleportClient', // teleport-client/TeleportClient
+		TeleportClient: 'teleport-client/TeleportClient',
 		util: 'my-helpers/util',
 		EventEmitter: 'my-helpers/EventEmitter'
 	}
@@ -13,8 +13,7 @@ requirejs.config({
 requirejs(['TeleportClient', 'util'], function(TeleportClient, util) {
 	//for Debuging
 	window.teleportClient = new TeleportClient({
-		serverAddress: "ws://nskazki.dyndns.info:8000",
-		//serverAddress: "ws://localhost:8000",
+		serverAddress: "ws://localhost:8000",
 		autoReconnect: 3000
 	})
 		.on('debug', console.debug.bind(console))

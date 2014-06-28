@@ -1,0 +1,14 @@
+{
+	"name": "browserify-style",
+	"version": "0.0.0",
+	"description": "",
+	"main": "browserify-mainTest.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"dependencies": {
+		"teleport-client": "*"
+	},
+	"author": "nskazki (http://nskazki.dyndns.info/)",
+	"license": "MIT"
+}

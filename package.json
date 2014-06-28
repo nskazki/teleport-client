@@ -1,0 +1,22 @@
+{
+  "name": "teleport-client",
+  "version": "0.3.6",
+  "description": "browserify rpc client",
+  "main": "browserify-TeleportClient.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nskazki/web-TeleportClient.git"
+  },
+  "keywords": [
+    "RPC"
+  ],
+  "author": "nskazki (http://nskazki.dyndns.info/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nskazki/web-TeleportClient/issues"
+  },
+  "homepage": "https://github.com/nskazki/web-TeleportClient"
+}

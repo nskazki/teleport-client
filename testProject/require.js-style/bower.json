@@ -15,7 +15,7 @@
     "tests"
   ],
   "dependencies": {
-    "teleport-client": "~0.1.7",
+    "teleport-client": "~0.3.6",
     "requirejs": "~2.1.12"
   }
 }
