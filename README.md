@@ -1,8 +1,14 @@
 TeleportClient
 ==============
 
+ * requirejs:
 ```
 bower install teleport-client --save
+```
+
+ * browserify:
+```
+npm install teleport-client --save
 ```
 
 [TeleportServer](https://github.com/MyNodeComponents/TeleportServer)

@@ -4,6 +4,8 @@ npm-debug.log
 node_modules
 
 testProject/browserify-style/node_modules
+testProject/browserify-style/browserify-mainTest.js
+
 testProject/require.js-style/bower_components
 testProject/classic-style/bower_components
 
