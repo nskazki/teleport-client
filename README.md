@@ -1,6 +1,8 @@
 TeleportClient
 ==============
 
+[TeleportServer](https://github.com/MyNodeComponents/TeleportServer)
+
  * requirejs:
 ```
 bower install teleport-client --save
@@ -10,8 +12,6 @@ bower install teleport-client --save
 ```
 npm install teleport-client --save
 ```
-
-[TeleportServer](https://github.com/MyNodeComponents/TeleportServer)
 
 <h5>Это RPC клиент, умеет:</h5>
  * Подлучать от сервера список телепортируемых объектов, имена их методов и событий.
