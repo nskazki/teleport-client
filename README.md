@@ -31,9 +31,57 @@ bower install teleport-client --save
  * Перезапуск сервера без изменения свойств телепортирумых объектов.
  * Перезапуск сервера с изменением свойств телепортируемых объектов.
 
-<h5>Requirejs совместимый:</h5>
-Если подклюна библиотека requirejs, то TeleportClient будет сформирован как модуль,
+<h5>requirejs и browserify совместимый:</h5>
+Если подклюна библиотека requirejs или использован browserify, то TeleportClient будет сформирован как модуль,
 иначе добавлен в глобальную область видимости.
+
+<h5>Удовлетворения зависимостей:</h5>
+ * browserify style:
+```js
+var TeleportClient = require('teleport-client');
+
+var teleportClient = new TeleportClient({
+		serverAddress: "ws://localhost:8000",
+		autoReconnect: 3000
+});
+...
+...
+```
+ * requirejs style:
+```js
+requirejs.config({
+	baseUrl: 'bower_components/',
+	paths: {
+		TeleportClient: 'teleport-client/TeleportClient',
+		util: 'my-helpers/util',
+		EventEmitter: 'my-helpers/EventEmitter'
+	}
+});
+
+
+requirejs(['TeleportClient'], function(TeleportClient) {
+	var teleportClient = new TeleportClient({
+		serverAddress: "ws://localhost:8000",
+		autoReconnect: 3000
+	})
+});
+```
+ * classic style:
+```html
+	...
+	<script type="text/javascript" src="https://rawgit.com/nskazki/web-Helpers/master/util.js"></script>
+	<script type="text/javascript" src="https://rawgit.com/nskazki/web-Helpers/master/EventEmitter.js"></script>
+	<script type="text/javascript" src="https://rawgit.com/nskazki/web-TeleportClient/master/TeleportClient.js"></script>
+</head>
+<body>
+	<script type="text/javascript">
+		var teleportClient = new TeleportClient({
+			serverAddress: "ws://localhost:8000",
+			autoReconnect: 3000
+		});
+	</script>
+	...
+```
 
 <h5>Example:</h5>
 ```js
