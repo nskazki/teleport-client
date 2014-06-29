@@ -3,5 +3,5 @@ bower_components
 npm-debug.log
 node_modules
 
-/testProject/browserify-style/node_modules
-/testProject/require.js-style/bower_components
+testProject/browserify-style/node_modules
+testProject/require.js-style/bower_components
