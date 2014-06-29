@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 var TeleportClient = require('teleport-client');
 var util = require('util');

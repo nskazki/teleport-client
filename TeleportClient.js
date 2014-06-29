@@ -1,4 +1,4 @@
-/**
+﻿/**
 	https://github.com/nskazki/web-TeleportClient
 	MIT
 	from russia with love, 2014
