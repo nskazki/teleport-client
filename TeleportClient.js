@@ -90,7 +90,7 @@ need include:
 			класс понадобился, и добавляю сформированный класс в глобальное пространство имен.
 
 		*/
-		namespace.TeleportClient = CreateTeleportServer(EventEmitter, util);
+		namespace.TeleportClient = CreateTeleportServer(namespace.EventEmitter, namespace.util);
 	}
 
 	function isModule() {
