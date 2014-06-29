@@ -72,11 +72,11 @@ need include:
 				'util'
 			],
 			CreateTeleportServer);
-	} else if (module && module.exports) {
+	} else if (isModule()) {
 		/**
 			Раз есть module.exports значит browserify сейчас подключает этот модуль
 			Зависимости удовлетворит сам browserify. 
-	
+
 		*/
 
 		var EventEmitter = require('events').EventEmitter;
@@ -91,6 +91,14 @@ need include:
 
 		*/
 		namespace.TeleportClient = CreateTeleportServer(EventEmitter, util);
+	}
+
+	function isModule() {
+		try {
+			return module && module.exports;
+		} catch (ex) {
+			return false;
+		}
 	}
 
 	function CreateTeleportServer(EventEmitter, util) {
