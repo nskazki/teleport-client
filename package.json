@@ -1,6 +1,6 @@
 {
   "name": "teleport-client",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "description": "browserify rpc client",
   "main": "browserify-TeleportClient.js",
   "scripts": {
@@ -18,5 +18,9 @@
   "bugs": {
     "url": "https://github.com/nskazki/web-TeleportClient/issues"
   },
-  "homepage": "https://github.com/nskazki/web-TeleportClient"
+  "homepage": "https://github.com/nskazki/web-TeleportClient",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-bump": "0.0.14"
+  }
 }
