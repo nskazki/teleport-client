@@ -10,7 +10,6 @@
 .node_modules/*
 
 node_modules/
-node_modules/*
 
 .testProject/browserify-style/node_modules
 .testProject/browserify-style/browserify-mainTest.js
