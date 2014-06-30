@@ -1,10 +1,10 @@
-Gruntfile.js
-npm-debug.log
+.Gruntfile.js
+.npm-debug.log
 
-.bower_components/
-.node_modules/
+.bower_components
+.node_modules
 
-.testProject/browserify-style/node_modules/
-.testProject/browserify-style/browserify-mainTest.js/
-.testProject/require.js-style/bower_components/
-.testProject/classic-style/bower_components/
+.testProject/browserify-style/node_modules
+.testProject/browserify-style/browserify-mainTest.js
+.testProject/require.js-style/bower_components
+.testProject/classic-style/bower_components
