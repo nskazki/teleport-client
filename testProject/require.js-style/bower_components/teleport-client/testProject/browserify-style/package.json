@@ -5,7 +5,7 @@
 	"main": "browserify-mainTest.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "browserify mainTest.js > browserify-mainTest.js -d"
+		"build": "browserify ./mainTest.js -o ./browserify-mainTest.js -d"
 	},
 	"dependencies": {
 		"teleport-client": "*"

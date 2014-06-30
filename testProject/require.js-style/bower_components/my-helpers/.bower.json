@@ -1,0 +1,33 @@
+{
+  "name": "my-helpers",
+  "version": "0.1.6",
+  "homepage": "https://github.com/nskazki/web-Helpers",
+  "authors": [
+    "nskazki <nskazki@gmail.com>"
+  ],
+  "description": "optimized for web some node.js components",
+  "moduleType": [
+    "amd",
+    "globals"
+  ],
+  "keywords": [
+    "helpers"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "_release": "0.1.6",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.1.6",
+    "commit": "f96f695babaab699361c4f34bec86616d0d1034c"
+  },
+  "_source": "git://github.com/nskazki/web-Helpers.git",
+  "_target": "~0.1.5",
+  "_originalSource": "my-helpers"
+}
