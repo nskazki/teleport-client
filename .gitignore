@@ -1,8 +1,8 @@
 .Gruntfile.js
 .npm-debug.log
 
-.bower_components/
-.node_modules/
+bower_components/
+node_modules/
 
 testProject/browserify-style/node_modules/
 testProject/browserify-style/browserify-mainTest.js
