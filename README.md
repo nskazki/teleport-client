@@ -50,9 +50,8 @@ var teleportClient = new TeleportClient({
 		serverAddress: "ws://localhost:8000",
 		autoReconnect: 3000
 });
-...
-...
 ```
+
  * requirejs style:
 ```js
 requirejs.config({
@@ -72,6 +71,7 @@ requirejs(['TeleportClient'], function(TeleportClient) {
 	})
 });
 ```
+
  * classic style:
 ```html
 	...
