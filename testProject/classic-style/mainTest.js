@@ -2,7 +2,7 @@
 
 window.teleportClient = new TeleportClient({
 		serverAddress: "ws://localhost:8000",
-		autoReconnect: 3000
+		autoReconnect: false
 	})
 	.on('debug', console.debug.bind(console))
 	.on('info', console.info.bind(console))
@@ -39,7 +39,7 @@ window.teleportClient = new TeleportClient({
 		/*funcs without callback*/
 		simpleObject
 			.funcWithUnlimArgs(false, '1', 2, 3)
-			.funcWith10SecDelay();
+			//.funcWith10SecDelay();
 
 	}).init();
 
