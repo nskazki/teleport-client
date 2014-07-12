@@ -23,6 +23,7 @@
     "tests"
   ],
   "dependencies": {
-    "my-helpers": "~0.1.5"
+    "my-helpers": "~0.1.5",
+    "socket.io-client": "~1.0.6"
   }
 }

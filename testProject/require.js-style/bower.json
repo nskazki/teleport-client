@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "teleport-client": "~0.3.6",
-    "requirejs": "~2.1.12"
+    "requirejs": "~2.1.12",
+    "socket.io-client": "~1.0.6"
   }
 }

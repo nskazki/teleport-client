@@ -1,6 +1,6 @@
 ﻿"use strict";
 
-var TeleportClient = require('teleport-client');
+var TeleportClient = require('../../');
 var util = require('util');
 
 window.teleportClient = new TeleportClient({

@@ -3,9 +3,10 @@
 requirejs.config({
 	baseUrl: 'bower_components/',
 	paths: {
-		TeleportClient: 'teleport-client/TeleportClient',
+		TeleportClient: '../../../TeleportClient',
 		util: 'my-helpers/util',
-		EventEmitter: 'my-helpers/EventEmitter'
+		EventEmitter: 'my-helpers/EventEmitter',
+		socketio: 'socket.io-client/socket.io'
 	}
 });
 
