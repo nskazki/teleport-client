@@ -59,7 +59,8 @@ requirejs.config({
 	paths: {
 		TeleportClient: 'teleport-client/TeleportClient',
 		util: 'my-helpers/util',
-		EventEmitter: 'my-helpers/EventEmitter'
+		EventEmitter: 'my-helpers/EventEmitter',
+		socketio: 'socket.io-client/socket.io'
 	}
 });
 
@@ -77,6 +78,7 @@ requirejs(['TeleportClient'], function(TeleportClient) {
 	...
 	<script type="text/javascript" src="https://rawgit.com/nskazki/web-Helpers/master/util.js"></script>
 	<script type="text/javascript" src="https://rawgit.com/nskazki/web-Helpers/master/EventEmitter.js"></script>
+	<script type="text/javascript" src="https://rawgit.com/Automattic/socket.io-client/master/socket.io.js"></script>
 	<script type="text/javascript" src="https://rawgit.com/nskazki/web-TeleportClient/master/TeleportClient.js"></script>
 </head>
 <body>
