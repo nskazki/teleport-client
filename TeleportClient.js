@@ -850,4 +850,5 @@ need include:
 
 				return TeleportClient;
 			}
-		}(window));
+		}(eval.valueOf()('this')));
+

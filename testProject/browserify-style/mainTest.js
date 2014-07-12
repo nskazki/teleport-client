@@ -1,16 +1,18 @@
 ﻿"use strict";
 
+var window = eval.valueOf()('this');
+
 var TeleportClient = require('../../');
 var util = require('util');
 
 window.teleportClient = new TeleportClient({
-		serverAddress: "ws://localhost:8000",
-		autoReconnect: 3000
-	})
-	.on('debug', console.debug.bind(console))
-	.on('info', console.info.bind(console))
-	.on('warn', console.warn.bind(console))
-	.on('error', console.error.bind(console))
+	serverAddress: "ws://localhost:8000",
+	autoReconnect: 3000
+})
+	.on('debug', console.log.bind(console))
+	.on('info', console.log.bind(console))
+	.on('warn', console.log.bind(console))
+	.on('error', console.log.bind(console))
 	.on('ready', function(objectsProps) {
 		//for Debuging
 		window.simpleObject = teleportClient.objects.simpleObject;;
@@ -49,32 +51,21 @@ window.teleportClient = new TeleportClient({
 
 function CreateEventLogger(objectName, eventName) {
 	return function() {
-		var obj = {
-			desc: util.format("[%s.event] Info: получено событие %s", objectName, eventName),
-			arguments: arguments
-		};
-
-		var details = document.createElement('details');
-		details.innerHTML = "<summary>" + obj.desc + "</summary>" + "<pre>" + JSON.stringify(obj, ' ', 4) + "</pre";
-
-		var welcom = document.getElementById('welcom');
-		welcom.parentNode.insertBefore(details, welcom);
+		console.log({
+			objectName: objectName,
+			eventName: eventName,
+			arguments: arguments,
+		});
 	}
 }
 
 function CreateCallbackLogger(objectName, methodName) {
 	return function(error, result) {
-		var obj = {
-			desc: util.format("[%s.callback] Info: вернулся результат вызова метода %s", objectName, methodName),
-			result: result,
-			error: error
-		};
-
-
-		var details = document.createElement('details');
-		details.innerHTML = "<summary>" + obj.desc + "</summary>" + "<pre>" + JSON.stringify(obj, ' ', 4) + "</pre";
-
-		var welcom = document.getElementById('welcom');
-		welcom.parentNode.insertBefore(details, welcom);
+		console.log({
+			objectName: objectName,
+			methodName: methodName,
+			error: error,
+			result: result
+		});
 	}
 }
