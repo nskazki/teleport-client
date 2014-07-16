@@ -4,7 +4,11 @@
   "description": "browserify rpc client",
   "main": "TeleportClient.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/mocha ./tests/test.js -R spec",
+    "build-debug": "browserify TeleportClient.js -d --s TeleportClient > dist/TeleportClient.js",
+    "build-min": "browserify TeleportClient.js --s TeleportClient | uglifyjs -c > dist/TeleportClient.min.js",
+    "build": "npm run build-debug && npm run build-min",
+    "watch": "watchify TeleportClient.js -d --s TeleportClient -o dist/TeleportClient.js -v"
   },
   "repository": {
     "type": "git",
@@ -20,11 +24,19 @@
   },
   "homepage": "https://github.com/nskazki/web-TeleportClient",
   "devDependencies": {
+    "browserify": "^4.2.1",
     "coffee-script": "^1.7.1",
     "grunt": "^0.4.5",
-    "grunt-bump": "0.0.14"
+    "grunt-bump": "0.0.14",
+    "mocha": "^1.20.1",
+    "socket.io": "^1.0.6",
+    "uglify-js": "^2.4.15",
+    "watchify": "^0.10.2"
   },
   "dependencies": {
-    "socket.io-client": "^1.0.6"
+    "debug": "^1.0.4",
+    "pattern-matching": "^0.1.6",
+    "socket.io-client": "^1.0.6",
+    "winston": "^0.7.3"
   }
 }
