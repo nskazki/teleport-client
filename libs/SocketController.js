@@ -7,6 +7,12 @@
 		socketDisconnect
 		socketReconnect
 
+	Listenings:
+
+		up:
+
+			needSocketSend
+
 */
 
 var util = require('util');
@@ -14,17 +20,6 @@ var events = require('events');
 var Socket = require('socket.io-client');
 
 var debug = require('debug')('TeleportClient-SocketController');
-
-var Winston = require('winston');
-var logger = new(Winston.Logger)({
-	transports: [
-		new(Winston.transports.Console)({
-			timestamp: true,
-			level: 'debug',
-			colorize: true
-		})
-	]
-});
 
 util.inherits(SocketController, events.EventEmitter);
 
@@ -41,6 +36,14 @@ function SocketController(serverAddress, autoReconnect) {
 	this._createSocket();
 }
 
+SocketController.prototype.up = function(peerController) {
+	peerController.on('needSocketSend', function(message) {
+		debug('~needSocketSend - message: %j', message);
+
+		this._socket.send(message);
+	}.bind(this));
+}
+
 SocketController.prototype.destroy = function() {
 	debug('#destroy');
 
@@ -55,7 +58,7 @@ SocketController.prototype._createSocket = function() {
 	});
 
 	this._socket.on('message', function(message) {
-		debug('!socketMessage, message: %s', message);
+		debug('!socketMessage, message: %j', message);
 
 		this.emit('socketMessage', message);
 	}.bind(this));
