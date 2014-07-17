@@ -3,9 +3,8 @@ var SocketsController = require('../../TeleportServer/libs/SocketsController');
 
 var PeerController = require('../libs/PeerController');
 var SocketController = require('../libs/SocketController');
+var ObjectsController = require('../libs/ObjectsController');
 var TeleportClient = require('..');
-
-var WebSocketServer = require('socket.io');
 
 var events = require('events');
 var assert = require('assert');
@@ -94,7 +93,7 @@ describe('SocketController', function() {
 
 describe('PeerController', function() {
 	var teleportServer, objWithFuncAndEvents;
-	var peerController, socketController, objectController;
+	var peerController, socketController, objectsController;
 
 	beforeEach(function(done) {
 		port++;
@@ -115,14 +114,13 @@ describe('PeerController', function() {
 
 		socketController = new SocketController(url + port, 300);
 		peerController = new PeerController();
-		objectController = new events.EventEmitter();
+		objectsController = new events.EventEmitter();
 
 		socketController.up(peerController);
-		peerController.down(socketController).up(objectController);
+		peerController.down(socketController).up(objectsController);
 	})
 
 	afterEach(function(done) {
-
 		objWithFuncAndEvents.removeAllListeners();
 
 		teleportServer
@@ -139,7 +137,7 @@ describe('PeerController', function() {
 
 		socketController.removeAllListeners().destroy();
 		peerController.removeAllListeners().destroy();
-		objectController.removeAllListeners();
+		objectsController.removeAllListeners();
 	});
 
 	it('!peerConnect && !objectsProps', function(done) {
@@ -213,7 +211,7 @@ describe('PeerController', function() {
 	it('~needPeerSend', function(done) {
 		peerController
 			.on('peerConnect', function() {
-				objectController.emit('needPeerSend', {
+				objectsController.emit('needPeerSend', {
 					type: 'command',
 					objectName: 'blank',
 					methodName: 'simpleFunc',
@@ -241,7 +239,7 @@ describe('PeerController', function() {
 				socketController.destroy();
 			})
 			.on('peerReconnecting', function() {
-				objectController.emit('needPeerSend', {
+				objectsController.emit('needPeerSend', {
 					type: 'command',
 					objectName: 'blank',
 					methodName: 'simpleFunc',
@@ -273,6 +271,113 @@ describe('PeerController', function() {
 	})
 });
 
+describe('objectsController', function() {
+	beforeEach(function(done) {
+		port++;
+
+		objWithFuncAndEvents = new ClassWithFuncAndEvents();
+
+		teleportServer = new TeleportServer({
+			port: port,
+			peerDisconnectedTimeout: 2000,
+			objects: {
+				'blank': {
+					object: objWithFuncAndEvents,
+					methods: ['simpleFunc'],
+					events: ['simpleEvent']
+				}
+			}
+		}).on('serverReady', done);
+
+		socketController = new SocketController(url + port, 300);
+		peerController = new PeerController();
+		objectsController = new ObjectsController();
+
+		socketController.up(peerController);
+		peerController.down(socketController).up(objectsController);
+		objectsController.down(peerController);
+	});
+
+	afterEach(function(done) {
+		objWithFuncAndEvents.removeAllListeners();
+
+		teleportServer
+			.removeAllListeners()
+			.on('serverDestroyed', function() {
+				teleportServer.removeAllListeners();
+				done();
+			})
+			.on('alreadyServerDestroyed', function() {
+				teleportServer.removeAllListeners();
+				done();
+			})
+			.destroy();
+
+		socketController.removeAllListeners().destroy();
+		peerController.removeAllListeners().destroy();
+		objectsController.removeAllListeners().destroy();
+	});
+
+	it('!objectsControllerReady', function(done) {
+		objectsController.on('objectsControllerReady', function(objectsProps) {
+			assert.deepEqual({
+				blank: {
+					methods: ['simpleFunc'],
+					events: ['simpleEvent']
+				}
+			}, objectsProps);
+
+			done();
+		});
+	})
+
+	it('call method', function(done) {
+		objectsController.on('objectsControllerReady', function() {
+			objectsController._objects.blank.simpleFunc('test', function(error, result) {
+				assert.equal(result, 'test');
+				done();
+			})
+		});
+	})
+
+	it('intercepr event', function(done) {
+		objectsController.on('objectsControllerReady', function() {
+			objWithFuncAndEvents.emit('simpleEvent', ':3', 'first arg a citty :)');
+
+			objectsController._objects.blank.on('simpleEvent', function(first, second) {
+				assert.equal(':3', first);
+				assert.equal('first arg a citty :)', second);
+
+				done();
+			});
+		});
+	});
+
+	it('~peerReconnectWithNewId', function(done) {
+		objectsController.on('objectsControllerReady', function() {
+			objWithFuncAndEvents.simpleFunc = function() {};
+
+			objectsController._objects.blank.simpleFunc('test', function(error, result) {
+				if (error) done();
+			})
+
+			teleportServer.destroy();
+			teleportServer.on('serverDestroyed', function() {
+				teleportServer = new TeleportServer({
+					port: port,
+					peerDisconnectedTimeout: 2000,
+					objects: {
+						'blank': {
+							object: objWithFuncAndEvents,
+							methods: ['simpleFunc'],
+							events: ['simpleEvent']
+						}
+					}
+				}).on('serverReady', done);
+			});
+		});
+	})
+})
 
 //
 util.inherits(ClassWithFuncAndEvents, events.EventEmitter);

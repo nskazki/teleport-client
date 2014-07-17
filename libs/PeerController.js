@@ -2,13 +2,14 @@
 	Events:
 
 		needSocketSend
-
+		
+		peerMessage
 		peerConnect
 		peerReconnecting
 		peerReconnect
 		peerReconnectWithNewId
 
-		objectProps
+		objectsProps
 
 		peerControllerDestroyed
 		peerControllerAlreadyDestroyed
@@ -129,7 +130,7 @@ PeerController.prototype.down = function(socketController) {
 		if (this._state === 'connecting') {
 			this._peerId = message.result.peerId;
 
-			debug('~socketMessage -> !peerConnect && !objectProps,\n\t message: %j', message);
+			debug('~socketMessage -> !peerConnect && !objectsProps,\n\t message: %j', message);
 			this._changeState('connect');
 
 			this.emit('objectsProps', message.result.objectsProps);
