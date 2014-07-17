@@ -43,24 +43,20 @@ function PeerController() {
 
 PeerController.prototype._onConnect = function() {
 	if (this._state === 'disconnect') {
-		this._state = 'reconnecting';
-
 		debug('~socketReconnect -> !needSocketSend \'reconnect command\'');
-		debug('oldState: %s -> newState: %s', 'disconnect', 'reconnecting');
+		this._changeState('reconnecting');
 
 		this.emit('needSocketSend', {
 			type: 'internalCommand',
 			internalCommand: 'reconnect',
 			args: {
-				clientTimestamp: clientTimestamp,
+				clientTimestamp: this._clientTimestamp,
 				peerId: this._peerId
 			}
 		});
 	} else if (this._state === 'notConnect') {
-		this._state = 'connecting';
-
 		debug('~socketConnect -> !needSocketSend \'connect command\'');
-		debug('oldState: %s -> newState: %s', 'notConnect', 'connecting');
+		this._changeState('connecting');
 
 		this.emit('needSocketSend', {
 			type: 'internalCommand',
@@ -72,6 +68,11 @@ PeerController.prototype._onConnect = function() {
 	}
 }
 
+PeerController.prototype._changeState = function(newState) {
+	debug('oldState: %s -> newState: %s', this._state, newState);
+	this._state = newState;
+}
+
 PeerController.prototype.down = function(socketController) {
 	socketController
 		.on('socketConnect', this._onConnect.bind(this))
@@ -79,34 +80,29 @@ PeerController.prototype.down = function(socketController) {
 
 	socketController.on('socketMessage', function(message) {
 		if (this._state === 'connecting') {
-			this._state = 'connect';
-			this._state = message.result.peerId;
+			this._peerId = message.result.peerId;
 
 			debug('~socketMessage -> !peerConnect && !objectProps, message: %j', message);
-			debug('oldState: %s -> newState: %s', 'connecting', 'connect');
+			this._changeState('connect');
 
 			this.emit('objectsProps', message.result.objectsProps);
 			this.emit('peerConnect');
 		} else if (this._state === 'connect') {
-
 			debug('~socketMessage -> !peerMessage, message: %j', message);
 			debug('state: %s', 'connect');
 
 			this.emit('peerMessage', message);
 		} else if (this._state === 'reconnecting') {
 			if (message.result === 'reconnected!') {
-				this._state = 'connect';
-
 				debug('~socketMessage -> !peerReconnect, message: %j', message);
-				debug('oldState: %s -> newState: %s', 'reconnecting', 'connect');
+				this._changeState('connect');
 
 				this.emit('peerReconnect');
 			} else if (typeof message.result.newPeerId === 'number') {
-				this._state = 'connect';
 				this._peerId = message.result.newPeerId;
 
 				debug('~socketMessage -> !peerReconnectWithNewId, message: %j', message);
-				debug('oldState: %s -> newState: %s', 'reconnecting', 'connect');
+				this._changeState('connect');
 
 				this.emit('peerReconnectWithNewId');
 			}
@@ -117,11 +113,9 @@ PeerController.prototype.down = function(socketController) {
 		debug('~socketDisconnect -> !peerReconnecting');
 
 		if (this._state === 'connect') {
-			this._state = 'disconnect';
-			debug('oldState: %s -> newState: %s', 'connect', 'disconnect');
+			this._changeState('disconnect');
 		} else {
-			debug('oldState: %s -> newState: %s', this._state, 'notConnect');
-			this._state = 'notConnect';
+			this._changeState('notConnect');
 		}
 
 		this.emit('peerReconnecting');

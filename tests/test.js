@@ -15,20 +15,41 @@ var port = 9000;
 var url = 'ws://localhost:';
 
 describe('SocketController', function() {
-	beforeEach(function() {
+	var socketController, peersController;
+	var socketsController;
+
+	beforeEach(function(done) {
 		port++;
+
+		socketController = new SocketController(url + port, 300);
+
+
+		socketsController = new SocketsController(port);
+		socketsController.on('serverReady', done);
+
+		peersController = new events.EventEmitter();
+		socketsController.up(peersController);
 	});
 
-	it('#new', function(done) {
-		var socketController = new SocketController(url + port, 300);
-		socketController.destroy();
-		done();
+	afterEach(function(done) {
+		peersController.removeAllListeners();
+
+		socketsController
+			.removeAllListeners()
+			.on('serverDestroyed', function() {
+				socketsController.removeAllListeners();
+				done();
+			})
+			.on('alreadyServerDestroyed', function() {
+				socketsController.removeAllListeners();
+				done();
+			})
+			.destroy();
+
+		socketController.removeAllListeners().destroy();
 	})
 
 	it('!socketConnect', function(done) {
-		var server = new WebSocketServer(port);
-		var socketController = new SocketController(url + port, 300);
-
 		socketController.on('socketConnect', function() {
 			socketController.destroy();
 			done();
@@ -36,70 +57,38 @@ describe('SocketController', function() {
 	});
 
 	it('!socketDisconnect', function(done) {
-		var server = new SocketsController(port);
-		var socketController = new SocketController(url + port, 300);
-
 		socketController.on('socketConnect', function() {
-			server.destroy();
+			socketsController.destroy();
 		})
 		socketController.on('socketDisconnect', function() {
-			socketController.destroy();
 			done();
 		});
 	});
 
 	it('!socketMessage', function(done) {
-		var server = new SocketsController(port);
-		var socketController = new SocketController(url + port, 300);
-		var peersController = new events.EventEmitter();
-		server.up(peersController);
-
-		server.on('socketConnection', function(id) {
+		socketsController.on('socketConnection', function(id) {
 			peersController.emit('needSocketSend', id, 'hello');
 		});
 
 		socketController.on('socketMessage', function(message) {
 			assert.equal('hello', message);
 
-			socketController.destroy();
-			server.destroy();
-
 			done();
 		})
 	});
 
 	it('!socketReconnect', function(done) {
-		var server = new SocketsController(port);
-		var socketController = new SocketController(url + port, 300);
-
 		socketController.on('socketConnect', function() {
-			server.destroy();
+			socketsController.destroy();
 		});
 
-		server.on('serverDestroyed', function() {
-			server = new SocketsController(port);
+		socketsController.on('serverDestroyed', function() {
+			socketsController = new SocketsController(port);
 		});
 
 		socketController.on('socketReconnect', function() {
-			server.destroy();
-			socketController.destroy();
-
 			done()
 		})
-	});
-
-	it('#up', function(done) {
-		var server = new SocketsController(port);
-		var socketController = new SocketController(url + port, 300);
-		var eventEmitter = new events.EventEmitter();
-		socketController.up(eventEmitter);
-
-		eventEmitter.emit('needSocketSend', 'hello');
-
-		server.on('socketMessage', function(id, message) {
-			assert.equal(message, 'hello');
-			done();
-		});
 	});
 });
 
@@ -113,7 +102,7 @@ describe('PeerController', function() {
 
 		teleportServer = new TeleportServer({
 			port: port,
-			peerDisconnectedTimeout: 50,
+			peerDisconnectedTimeout: 500,
 			objects: {
 				'blank': {
 					object: objWithFuncAndEvents,
@@ -125,8 +114,20 @@ describe('PeerController', function() {
 	})
 
 	afterEach(function(done) {
-		teleportServer.destroy();
-		teleportServer.on('serverDestroyed', done);
+
+		objWithFuncAndEvents.removeAllListeners();
+
+		teleportServer
+			.removeAllListeners()
+			.on('serverDestroyed', function() {
+				teleportServer.removeAllListeners();
+				done();
+			})
+			.on('alreadyServerDestroyed', function() {
+				teleportServer.removeAllListeners();
+				done();
+			})
+			.destroy();
 	});
 
 	it('#new', function(done) {
@@ -168,17 +169,45 @@ describe('PeerController', function() {
 		peerController.down(socketController);
 
 		peerController.on('peerConnect', function() {
-			//teleportServer.destroy();
+			teleportServer.destroy();
 		});
 
-		
+		peerController.on('peerReconnecting', function() {
+			done();
+		})
+	});
+
+	it('!peerReconnectWithNewId', function(done) {
+		var socketController = new SocketController(url + port, 300);
+		var peerController = new PeerController();
+
+		socketController.up(peerController);
+		peerController.down(socketController);
+
+		peerController.on('peerConnect', function() {
+			teleportServer.destroy();
+		});
+
+		teleportServer.on('serverDestroyed', function() {
+			teleportServer = new TeleportServer({
+				port: port,
+				peerDisconnectedTimeout: 500,
+				objects: {
+					'blank': {
+						object: objWithFuncAndEvents,
+						methods: ['simpleFunc'],
+						events: ['simpleEvent']
+					}
+				}
+			});
+		})
+
+		peerController.on('peerReconnectWithNewId', done);
 	})
 
 });
 
 describe('TeleportClient', function() {
-
-
 
 	it('#new', function() {
 		var teleportClient = new TeleportClient({
@@ -186,7 +215,6 @@ describe('TeleportClient', function() {
 			autoReconnect: 500
 		});
 	});
-
 
 })
 
