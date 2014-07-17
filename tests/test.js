@@ -210,8 +210,29 @@ describe('PeerController', function() {
 		})
 	})
 
-	it('~needPeerSend', function() {
-		
+	it('~needPeerSend', function(done) {
+		peerController
+			.on('peerConnect', function() {
+				objectController.emit('needPeerSend', {
+					type: 'command',
+					objectName: 'blank',
+					methodName: 'simpleFunc',
+					args: ['hello'],
+					requestId: 0
+				});
+			})
+			.on('peerMessage', function(message) {
+				assert.deepEqual(message, {
+					objectName: "blank",
+					type: "callback",
+					methodName: "simpleFunc",
+					requestId: 0,
+					error: null,
+					result: "hello"
+				});
+
+				done();
+			})
 	})
 });
 

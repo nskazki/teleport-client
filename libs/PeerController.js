@@ -50,7 +50,7 @@ function PeerController() {
 }
 
 PeerController.prototype._onPeerConnect = function() {
-	debug('~peerReconnect || ~peerConnect -> send all message from peer._messageQueue.', peerId);
+	debug('~peerReconnect || ~peerConnect -> send all message from peer._messageQueue.');
 
 	while (this._messageQueue.length) {
 		var message = this._messageQueue.shift();
