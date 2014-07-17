@@ -10,8 +10,6 @@
 
 		objectProps
 
-		needSocketSend
-		
 		peerControllerDestroyed
 		peerControllerAlreadyDestroyed
 
@@ -80,8 +78,6 @@ PeerController.prototype.destroy = function() {
 		this._isInit = false;
 
 		debug('#destroy -> !peerControllerDestroyed');
-
-
 
 		this.emit('peerControllerDestroyed');
 	} else {

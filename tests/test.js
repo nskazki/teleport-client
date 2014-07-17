@@ -234,6 +234,43 @@ describe('PeerController', function() {
 				done();
 			})
 	})
+
+	it('~needPeerSend during reconnecting', function(done) {
+		peerController
+			.on('peerConnect', function() {
+				socketController.destroy();
+			})
+			.on('peerReconnecting', function() {
+				objectController.emit('needPeerSend', {
+					type: 'command',
+					objectName: 'blank',
+					methodName: 'simpleFunc',
+					args: ['hello'],
+					requestId: 0
+				});
+			})
+			.on('peerMessage', function(message) {
+				assert.deepEqual(message, {
+					objectName: "blank",
+					type: "callback",
+					methodName: "simpleFunc",
+					requestId: 0,
+					error: null,
+					result: "hello"
+				});
+
+				done();
+			})
+
+		socketController.on('socketControllerDestroyed', function() {
+			peerController._state = 'disconnect';
+			peerController.emit('peerReconnecting');
+
+			socketController = new SocketController(url + port, 300);
+			socketController.up(peerController);
+			peerController.down(socketController);
+		})
+	})
 });
 
 
