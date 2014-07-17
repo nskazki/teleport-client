@@ -4,8 +4,11 @@
 		socketMessage
 		socketConnect
 		socketError
-		socketDisconnect
+		socketReconnecting
 		socketReconnect
+
+		socketControllerAlreadyDestroyed
+		socketControllerDestroyed
 
 	Listenings:
 
@@ -34,21 +37,37 @@ function SocketController(serverAddress, autoReconnect) {
 
 	this._socket = null;
 	this._createSocket();
+
+	this._isInit = true;
 }
 
 SocketController.prototype.up = function(peerController) {
 	peerController.on('needSocketSend', function(message) {
-		debug('~needSocketSend - message: %j', message);
+		debug('~needSocketSend -> #send,\n\t message: %j', message);
 
 		this._socket.send(message);
 	}.bind(this));
+
+	return this;
 }
 
 SocketController.prototype.destroy = function() {
-	debug('#destroy');
+	if (this._isInit === true) {
+		this._isInit = false;
 
-	this._socket.removeAllListeners();
-	socketClose(this._socket);
+		debug('#destroy -> !socketControllerDestroyed');
+
+		this._socket.removeAllListeners();
+
+		socketClose(this._socket, function() {
+			this.emit('socketControllerDestroyed');
+		}.bind(this));
+	} else {
+		debug('#destroy -> !socketControllerAlreadyDestroyed')
+		this.emit('socketControllerAlreadyDestroyed');
+	}
+
+	return this;
 }
 
 SocketController.prototype._createSocket = function() {
@@ -58,7 +77,7 @@ SocketController.prototype._createSocket = function() {
 	});
 
 	this._socket.on('message', function(message) {
-		debug('!socketMessage, message: %j', message);
+		debug('~message -> !socketMessage,\n\t message: %j', message);
 
 		this.emit('socketMessage', message);
 	}.bind(this));
@@ -68,12 +87,12 @@ SocketController.prototype._createSocket = function() {
 			this._isNowDisconnected = false;
 			this._isSometimeConnected = true;
 
-			debug('!socketConnect');
+			debug('~connect -> !socketConnect');
 			this.emit('socketConnect');
 		} else {
 			this._isNowDisconnected = false;
 
-			debug('!socketReconnect');
+			debug('~connect -> !socketReconnect');
 			this.emit('socketReconnect');
 		}
 
@@ -81,6 +100,8 @@ SocketController.prototype._createSocket = function() {
 	}.bind(this));
 
 	this._socket.on('error', function(error) {
+		debug('~error -> !socketError,\n\t error: %s', error.toString());
+
 		this.emit('socketError', error)
 	}.bind(this));
 
@@ -88,8 +109,8 @@ SocketController.prototype._createSocket = function() {
 		if (!this._isNowDisconnected) {
 			this._isNowDisconnected = true;
 
-			debug('!socketDisconnect');
-			this.emit('socketDisconnect');
+			debug('~desconnect || ~connect_error -> !socketReconnecting');
+			this.emit('socketReconnecting');
 		}
 
 		this._socket.removeAllListeners().close();
@@ -99,7 +120,7 @@ SocketController.prototype._createSocket = function() {
 	this._socket.on('disconnect', onDisconnect).on('connect_error', onDisconnect);
 };
 
-function socketClose(socket) {
+function socketClose(socket, callback) {
 	socket.packet({
 		"type": 1,
 		"nsp": "/"
@@ -114,5 +135,7 @@ function socketClose(socket) {
 	setTimeout(function() {
 		socket.destroy();
 		socket.onclose('io client disconnect');
+
+		callback();
 	}, 500);
 }
