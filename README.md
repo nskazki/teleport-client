@@ -27,7 +27,8 @@ npm install teleport-client --save
  * Если клиент вызовет метод телепортированного объекта во время отсутствия соединения, 
  	<br>то он будет вызван когда соединение восстановится.
 
-<h5>Подключение:<h5>
+<h5>Подключение:</h5>
+
  * browserify, node.js:
 ```js
 var TeleportClient = require('teleport-client');
