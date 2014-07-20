@@ -38,6 +38,8 @@ util.inherits(PeerController, events.EventEmitter);
 module.exports = PeerController;
 
 function PeerController() {
+	this._initAsyncEmit();
+
 	this._peerId = null;
 	this._clientTimestamp = new Date().valueOf();
 	this._state = 'notConnect';
@@ -48,8 +50,19 @@ function PeerController() {
 	this._isInit = true;
 }
 
+PeerController.prototype._initAsyncEmit = function() {
+	var vanullaEmit = this.emit;
+	this.emit = function() {
+		var asyncArguments = arguments;
+
+		setTimeout(function() {
+			vanullaEmit.apply(this, asyncArguments);
+		}.bind(this), 0);
+	}.bind(this);
+}
+
 PeerController.prototype._onPeerConnect = function() {
-	debug('~peerReconnect || ~peerConnect -> send all message from peer._messageQueue.');
+	debug('~peerConnect || ~peerReconnect -> send all message from peer._messageQueue.');
 
 	while (this._messageQueue.length) {
 		var message = this._messageQueue.shift();
@@ -62,6 +75,8 @@ PeerController.prototype._onNeedPeerSend = function(message) {
 		debug('~needPeerSend -> !needSocketSend,\n\t message: %j', message);
 		this.emit('needSocketSend', message);
 	} else {
+		for (var i = 0; i < 10e8; i++);
+
 		debug('~needPeerSend && state: %s -> add message to _messageQueue,\n\t message: %j', this._state, message);
 		this._messageQueue.push(message);
 	}

@@ -29,6 +29,8 @@ util.inherits(SocketController, events.EventEmitter);
 module.exports = SocketController;
 
 function SocketController(serverAddress, autoReconnect) {
+	this._initAsyncEmit();
+
 	this._serverAddress = serverAddress;
 	this._autoReconnect = autoReconnect;
 
@@ -39,6 +41,17 @@ function SocketController(serverAddress, autoReconnect) {
 	this._createSocket();
 
 	this._isInit = true;
+}
+
+SocketController.prototype._initAsyncEmit = function() {
+	var vanullaEmit = this.emit;
+	this.emit = function() {
+		var asyncArguments = arguments;
+
+		setTimeout(function() {
+			vanullaEmit.apply(this, asyncArguments);
+		}.bind(this), 0);
+	}.bind(this);
 }
 
 SocketController.prototype.up = function(peerController) {
