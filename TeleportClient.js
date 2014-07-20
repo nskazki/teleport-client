@@ -13,10 +13,9 @@
 	Events:
 
 		peerConnect -> ready
-		peerReconnect -> reconnect
+		peerReconnect -> reconnect & reconnectOnOldTerms
 		peerReconnectWithNewId -> reconnect & reconnectAndReinit
-		peerReconnectWithNewId -> reconnecting
-		
+		peerReconnecting -> reconnecting
 
 		socketError -> error
 		socketControllerDestroyed -> destroyed
@@ -96,8 +95,8 @@ TeleportClient.prototype.destroy = function() {
 };
 
 TeleportClient.prototype._bindOnControllersEvents = function() {
-	var peerSourceNames = ['peerConnect', 'peerReconnect', 'peerReconnectWithNewId', 'peerReconnectWithNewId', 'peerReconnecting'];
-	var peerNewNames = ['ready', 'reconnect', 'reconnect', 'reconnectAndReinit', 'reconnecting'];
+	var peerSourceNames = ['peerConnect', 'peerReconnect', 'peerReconnect', 'peerReconnectWithNewId', 'peerReconnectWithNewId', 'peerReconnecting'];
+	var peerNewNames = ['ready', 'reconnect', 'reconnectOnOldTerms', 'reconnect', 'reconnectAndReinit', 'reconnecting'];
 
 	this._createEvetnsProxy(
 		this._peerController,
