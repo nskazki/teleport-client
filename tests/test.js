@@ -448,28 +448,28 @@ describe('TeleportClient', function() {
 	it('first contact', function(done) {
 		var count = [];
 
-		teleportClient.on('peerConnect', function() {
-			count.push('peerConnect');
+		teleportClient.on('ready', function() {
+			count.push('ready');
 
 			if (count.length === 2) done();
 		});
 
-		teleportServer.on('peerConnection', function(id) {
+		teleportServer.on('clientConnection', function(id) {
 			assert.equal(id, 0);
 
-			count.push('peerConnection');
+			count.push('clientConnection');
 		});
 	})
 
 	it('event', function(done) {
-		teleportClient.on('peerConnect', function() {
+		teleportClient.on('ready', function() {
 			objWithFuncAndEvents.emit('simpleEvent');
 			teleportClient.objects.blank.on('simpleEvent', done);
 		});
 	});
 
 	it('command', function(done) {
-		teleportClient.on('peerConnect', function() {
+		teleportClient.on('ready', function() {
 			teleportClient.objects.blank.simpleFunc(null, done);
 		});
 	})

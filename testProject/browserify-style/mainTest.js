@@ -6,7 +6,7 @@ var util = require('util');
 window.teleportClient = new TeleportClient({
 	serverAddress: "ws://localhost:8000",
 	autoReconnect: 3000
-}).on('peerConnect', function(objectsProps) {
+}).on('ready', function(objectsProps) {
 	//for Debuging
 	window.simpleObject = teleportClient.objects.simpleObject;;
 
