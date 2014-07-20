@@ -80,13 +80,16 @@ TeleportClient.prototype._bindOnControllersEvents = function() {
 	);
 }
 
-TeleportClient.prototype._createEvetnsProxy = function(object, events) {
-	events.forEach(function(eventName) {
+TeleportClient.prototype._createEvetnsProxy = function(object, eventsSourceNames, eventsNewNames) {
+	for (var index = 0; index < eventsSourceNames.length; index++) {
+		var sourceName = eventsSourceNames[index];
+		var newName = (eventsNewNames) ? eventsNewNames[index] : sourceName;
+
 		object.on(
-			eventName,
-			this._createEventProxy(eventName).bind(this)
+			sourceName,
+			this._createEventProxy(newName).bind(this)
 		);
-	}.bind(this));
+	}
 }
 
 TeleportClient.prototype._createEventProxy = function(eventName) {
