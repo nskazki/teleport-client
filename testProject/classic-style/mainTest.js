@@ -1,53 +1,48 @@
 "use strict";
 
 window.teleportClient = new TeleportClient({
-		serverAddress: "ws://localhost:8000",
-		autoReconnect: 3000
-	})
-	.on('debug', console.debug.bind(console))
-	.on('info', console.info.bind(console))
-	.on('warn', console.warn.bind(console))
-	.on('error', console.error.bind(console))
-	.on('ready', function(objectsProps) {
-		//for Debuging
-		window.simpleObject = teleportClient.objects.simpleObject;;
+	serverAddress: "ws://localhost:8000",
+	autoReconnect: 3000
+}).on('peerConnect', function(objectsProps) {
+	//for Debuging
+	window.simpleObject = teleportClient.objects.simpleObject;;
 
-		/*events*/
-		simpleObject
-			.on(
-				'eventWithMyOptions',
-				CreateEventLogger('simpleObject', 'eventWithMyOptions'))
-			.on(
-				'eventWithoutArgs',
-				CreateEventLogger('simpleObject', 'eventWithoutArgs'))
-			.on(
-				'eventWithUnlimArgs',
-				CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
-			.on(
-				'10secIntervalEvent',
-				CreateEventLogger('simpleObject', '10secIntervalEvent'));
+	/*events*/
+	simpleObject
+		.on(
+			'eventWithMyOptions',
+			CreateEventLogger('simpleObject', 'eventWithMyOptions'))
+		.on(
+			'eventWithoutArgs',
+			CreateEventLogger('simpleObject', 'eventWithoutArgs'))
+		.on(
+			'eventWithUnlimArgs',
+			CreateEventLogger('simpleObject', 'eventWithUnlimArgs'))
+		.on(
+			'10secIntervalEvent',
+			CreateEventLogger('simpleObject', '10secIntervalEvent'));
 
 
-		/*funcs with callback*/
-		simpleObject
-			.func(
-				'simepleParam',
-				CreateCallbackLogger('simpleObject', 'func'))
-			.funcWithoutArgs(
-				CreateCallbackLogger('simpleObject', 'funcWithoutArgs'))
+	/*funcs with callback*/
+	simpleObject
+		.func(
+			'simepleParam',
+			CreateCallbackLogger('simpleObject', 'func'))
+		.funcWithoutArgs(
+			CreateCallbackLogger('simpleObject', 'funcWithoutArgs'))
 
-		/*funcs without callback*/
-		simpleObject
-			.funcWithUnlimArgs(false, '1', 2, 3)
-			.funcWith10SecDelay();
+	/*funcs without callback*/
+	simpleObject
+		.funcWithUnlimArgs(false, '1', 2, 3)
+		.funcWith10SecDelay();
 
-	}).init();
+});
 
 
 function CreateEventLogger(objectName, eventName) {
 	return function() {
 		var obj = {
-			desc: util.format("[%s.event] Info: получено событие %s", objectName, eventName),
+			desc: "[" + objectName + ".event] Info: получено событие " + eventName,
 			arguments: arguments
 		};
 
@@ -62,7 +57,7 @@ function CreateEventLogger(objectName, eventName) {
 function CreateCallbackLogger(objectName, methodName) {
 	return function(error, result) {
 		var obj = {
-			desc: util.format("[%s.callback] Info: вернулся результат вызова метода %s", objectName, methodName),
+			desc: "[" + objectName + ".callback] Info: вернулся результат вызова метода " + methodName,
 			result: result,
 			error: error
 		};

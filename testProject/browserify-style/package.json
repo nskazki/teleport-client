@@ -7,9 +7,6 @@
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build": "browserify mainTest.js > browserify-mainTest.js -d"
 	},
-	"dependencies": {
-		"teleport-client": "*"
-	},
 	"author": "nskazki (http://nskazki.dyndns.info/)",
 	"license": "MIT"
 }
