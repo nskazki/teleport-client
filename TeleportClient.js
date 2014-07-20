@@ -1,3 +1,28 @@
+/**
+	https://github.com/nskazki/web-TeleportClient
+	MIT
+	from russia with love, 2014
+*/
+
+/**
+
+	Public:
+
+		destroy
+
+	Events:
+
+		peerConnect -> ready
+		peerReconnect -> reconnect
+		peerReconnectWithNewId -> reconnect & reconnectAndReinit
+		peerReconnectWithNewId -> reconnecting
+		
+
+		socketError -> error
+		socketControllerDestroyed -> destroyed
+		socketControllerAlreadyDestroyed -> alreadyDestroyed
+*/
+
 'use strict';
 
 var SocketController = require('./libs/SocketController');
@@ -53,7 +78,7 @@ TeleportClient.prototype.destroy = function() {
 	if (this._isInit === true) {
 		this._isInit = false;
 
-		this.on('socketControllerDestroyed', function() {
+		this.on('destroyed', function() {
 			this._objectsController.removeAllListeners();
 			this._socketController.removeAllListeners();
 			this._peerController.removeAllListeners();
@@ -64,19 +89,29 @@ TeleportClient.prototype.destroy = function() {
 		this._peerController.destroy();
 
 	} else {
-		this.emit('socketControllerAlreadyDestroyed');
+		this.emit('alreadyDestroyed');
 	}
 
 	return this;
 };
 
 TeleportClient.prototype._bindOnControllersEvents = function() {
-	this._createEvetnsProxy(
-		this._peerController, ['peerReconnect', 'peerReconnecting', 'peerConnect', 'peerReconnectWithNewId']
-	);
+	var peerSourceNames = ['peerConnect', 'peerReconnect', 'peerReconnectWithNewId', 'peerReconnectWithNewId', 'peerReconnecting'];
+	var peerNewNames = ['ready', 'reconnect', 'reconnect', 'reconnectAndReinit', 'reconnecting'];
 
 	this._createEvetnsProxy(
-		this._socketController, ['socketError', 'socketControllerDestroyed', 'socketControllerAlreadyDestroyed']
+		this._peerController,
+		peerSourceNames,
+		peerNewNames
+	);
+
+	var socketSourceNames = ['socketError', 'socketControllerDestroyed', 'socketControllerAlreadyDestroyed'];
+	var socketNewNames = ['error', 'destroyed', 'alreadyDestroyed'];
+
+	this._createEvetnsProxy(
+		this._socketController,
+		socketSourceNames,
+		socketNewNames
 	);
 }
 
