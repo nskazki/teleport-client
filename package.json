@@ -25,10 +25,7 @@
   "homepage": "https://github.com/nskazki/web-TeleportClient",
   "devDependencies": {
     "browserify": "^4.2.1",
-    "coffee-script": "^1.7.1",
-    "grunt": "^0.4.5",
-    "grunt-bump": "0.0.14",
-    "mocha": "^1.20.1",
+     "mocha": "^1.20.1",
     "socket.io": "^1.0.6",
     "uglify-js": "^2.4.15",
     "watchify": "^0.10.2"
@@ -36,7 +33,6 @@
   "dependencies": {
     "debug": "^1.0.4",
     "pattern-matching": "^0.1.6",
-    "socket.io-client": "^1.0.6",
-    "winston": "^0.7.3"
+    "socket.io-client": "^1.0.6"
   }
 }
