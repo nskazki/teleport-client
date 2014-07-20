@@ -189,5 +189,7 @@ TeleportedObject.prototype._createMethod = function(methodName) {
 		if (!callback) callback = function() {}
 
 		this.emit('_newCommand', this._objectName, methodName, args, callback);
+
+		return this;
 	}.bind(this);
 }
