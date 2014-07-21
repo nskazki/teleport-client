@@ -8,8 +8,9 @@ npm install teleport-client --save
 ```
 
 <h5>Это RPC клиент, умеет:</h5>
- * Подлучать от сервера список телепортируемых объектов, имена их методов и событий.
- * Генирировать на основе полученного списка соответствующие объекты и методы.
+ * Подлючаться и авторизовываться на сервере.
+ * Получать от сервера список телепортируемых объектов, имена их методов и событий.
+ * Генерировать на основе полученного списка соответствующие объекты и методы.
  * Выбрасывать события серверных объектов из сгенирированных.
  * Работает в браузере и под управлением node.js
 
@@ -18,6 +19,9 @@ npm install teleport-client --save
  * Работает только с асинхронными методоми телепортируемых объектов, принимающими неограниченное количество аргументов и callback.
  * Выбрасываемые телепортированными объектами события могут содержать неограниченное количество аргументов.
  * Все аргументы передоваемые на сервер и результаты возвращаемые на клиента проходят через JSON.stringify -> JSON.parse.
+ * Авторизация обязательно, я серьезно передавайте в качестве авторизационных данных хотя бы имя проекта, 
+ 	<br>не стреляйте себе в ногу лишний раз.
+ * Указывать интервалы попыток переподключения обязательно.
 
 <h5>Кил фича:</h5>
 Если соединение с сервером кратковременно оборвется, то:
@@ -34,8 +38,11 @@ npm install teleport-client --save
 var TeleportClient = require('teleport-client');
 
 var teleportClient = new TeleportClient({
-		serverAddress: "ws://localhost:8000",
-		autoReconnect: 3000
+	serverAddress: "ws://localhost:8000",
+	autoReconnect: 3000,
+	authFunc: function(callback) {
+		callback(null, 'example project');
+	}
 });
 ```
 
@@ -48,7 +55,10 @@ var teleportClient = new TeleportClient({
 	<script type="text/javascript">
 		var teleportClient = new TeleportClient({
 			serverAddress: "ws://localhost:8000",
-			autoReconnect: 3000
+			autoReconnect: 3000,
+			authFunc: function(callback) {
+				callback(null, 'example project');
+			}
 		});
 	</script>
 	...
@@ -58,7 +68,10 @@ var teleportClient = new TeleportClient({
 ```js
 var teleportClient = new TeleportClient({
 	serverAddress: "ws://localhost:8000",
-	autoReconnect: 3000
+	autoReconnect: 3000,
+	authFunc: function(callback) {
+		callback(null, 'example project');
+	}
 })
 	.on('ready', function(objectsProps) {
 			console.log(objectsProps);
@@ -72,6 +85,7 @@ var teleportClient = new TeleportClient({
 <h5>Параметры принимаемые конструктором:</h5>
  * `serverAddress` - адрес и порт TeleportServer.
  * `autoReconnect` - время задержки в миллисекундах перед переподключением к серверу, после разрыва соединения.
+ * `authFunc` - функция генерирующая авторизационные данные для подключения к серверу, будет вызвана только один раз.
 
 <h5>Публичные методы:</h5>
  * `destroy` - метод прекращающий работу объекта.
