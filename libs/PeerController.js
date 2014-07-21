@@ -14,7 +14,6 @@
 		peerControllerDestroyed
 		peerControllerAlreadyDestroyed
 
-	
 	Listenings:
 
 		down:
@@ -32,16 +31,20 @@ var util = require('util');
 var events = require('events');
 var Socket = require('socket.io-client');
 var debug = require('debug')('TeleportClient-PeerController');
+var patternMatching = require('pattern-matching');
 
 util.inherits(PeerController, events.EventEmitter);
 
 module.exports = PeerController;
 
-function PeerController() {
+function PeerController(authFunc) {
 	this._initAsyncEmit();
 
+	this._authFunc = authFunc;
+	this._authData = null;
+
 	this._peerId = null;
-	this._clientTimestamp = new Date().valueOf();
+	this._token = null;
 	this._state = 'notConnect';
 	this._messageQueue = [];
 
@@ -72,6 +75,8 @@ PeerController.prototype._onPeerConnect = function() {
 
 PeerController.prototype._onNeedPeerSend = function(message) {
 	if (this._state === 'connect') {
+		message.token = this._token;
+
 		debug('~needPeerSend -> !needSocketSend,\n\t message: %j', message);
 		this.emit('needSocketSend', message);
 	} else {
@@ -105,30 +110,52 @@ PeerController.prototype.destroy = function() {
 }
 
 PeerController.prototype._onSocketConnect = function() {
-	if (this._state === 'disconnect') {
-		debug('~socketReconnect || ~socketConnect -> !needSocketSend \'reconnect command\'');
-		this._changeState('reconnecting');
+	if (this._authData !== null) {
+		debug('_authData defined -> call #connecter, _authData: %j', this._authData);
+		connecter.bind(this)();
+	} else {
+		debug('_authData not defined, call #_authFunc');
 
-		this.emit('needSocketSend', {
-			type: 'internalCommand',
-			internalCommand: 'reconnect',
-			args: {
-				clientTimestamp: this._clientTimestamp,
-				peerId: this._peerId
+		this._authFunc(function(error, authData) {
+			if (error) {
+				debug('_authFunc returned error, wow i threw error, error: %j', error);
+				throw new Error('authFunc returned error: ' + error.toString());
 			}
-		});
-	} else if (this._state === 'notConnect') {
-		debug('~socketReconnect || ~socketConnect -> !needSocketSend \'connect command\'');
-		this._changeState('connecting');
 
-		this.emit('needSocketSend', {
-			type: 'internalCommand',
-			internalCommand: 'connect',
-			args: {
-				clientTimestamp: this._clientTimestamp
-			}
-		});
+			debug('#_authFunc returned _authData -> call #connecter, _authData: %j', authData);
+
+			this._authData = authData;
+			connecter.bind(this)();
+		}.bind(this));
 	}
+
+	function connecter() {
+		if (this._state === 'disconnect') {
+			debug('~socketReconnect || ~socketConnect -> !needSocketSend \'reconnect command\'');
+			this._changeState('reconnecting');
+
+			this.emit('needSocketSend', {
+				type: 'internalCommand',
+				internalCommand: 'reconnect',
+				args: {
+					authData: this._authData,
+					token: this._token,
+					peerId: this._peerId
+				}
+			});
+		} else if (this._state === 'notConnect') {
+			debug('~socketReconnect || ~socketConnect -> !needSocketSend \'connect command\'');
+			this._changeState('connecting');
+
+			this.emit('needSocketSend', {
+				type: 'internalCommand',
+				internalCommand: 'connect',
+				args: {
+					authData: this._authData
+				}
+			});
+		}
+	};
 }
 
 PeerController.prototype._changeState = function(newState) {
@@ -142,8 +169,14 @@ PeerController.prototype.down = function(socketController) {
 		.on('socketReconnect', this._onSocketConnect.bind(this));
 
 	socketController.on('socketMessage', function(message) {
-		if (this._state === 'connecting') {
+		if (this._state === 'connecting' && patternMatching(message, {
+			result: {
+				token: 'notEmptyString',
+				peerId: 'integer'
+			}
+		})) {
 			this._peerId = message.result.peerId;
+			this._token = message.result.token;
 
 			debug('~socketMessage -> !peerConnect && !objectsProps,\n\t message: %j', message);
 			this._changeState('connect');
@@ -161,8 +194,14 @@ PeerController.prototype.down = function(socketController) {
 				this._changeState('connect');
 
 				this.emit('peerReconnect');
-			} else if (typeof message.result.newPeerId === 'number') {
+			} else if (patternMatching(message, {
+				result: {
+					newToken: 'notEmptyString',
+					newPeerId: 'integer'
+				}
+			})) {
 				this._peerId = message.result.newPeerId;
+				this._token = message.result.newToken;
 
 				debug('~socketMessage -> !peerReconnectWithNewId,\n\t message: %j', message);
 				this._changeState('connect');

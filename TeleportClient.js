@@ -32,6 +32,7 @@ var util = require('util');
 var events = require('events');
 
 var patternMatching = require('pattern-matching');
+var debug = require('debug')('TeleportClient-main');
 
 util.inherits(TeleportClient, events.EventEmitter);
 
@@ -40,7 +41,8 @@ module.exports = TeleportClient;
 function TeleportClient(params) {
 	if (!patternMatching(params, {
 		serverAddress: 'notEmptyString',
-		autoReconnect: 'integer'
+		autoReconnect: 'integer',
+		authFunc: 'function'
 	})) throw new Error('does not match pattern.');
 
 	this._initAsyncEmit();
@@ -49,7 +51,7 @@ function TeleportClient(params) {
 
 	this._objectsController = new ObjectsController();
 	this._socketController = new SocketController(params.serverAddress, params.autoReconnect);
-	this._peerController = new PeerController();
+	this._peerController = new PeerController(params.authFunc);
 
 	this._socketController.up(this._peerController);
 	this._peerController.down(this._socketController).up(this._objectsController);
@@ -88,6 +90,7 @@ TeleportClient.prototype.destroy = function() {
 		this._peerController.destroy();
 
 	} else {
+		debug('#destroy - TeleportClient alreadyDestroyed -> !alreadyDestroyed');
 		this.emit('alreadyDestroyed');
 	}
 

@@ -1,3 +1,5 @@
+'use strict';
+
 var TeleportServer = require('../../TeleportServer');
 var SocketsController = require('../../TeleportServer/libs/SocketsController');
 
@@ -13,34 +15,45 @@ var util = require('util');
 var port = 9000;
 var url = 'ws://localhost:';
 
+var debug = require('debug')('TeleportClient-test');
+
 describe('SocketController', function() {
 	var socketController, peersController;
 	var socketsController;
 
 	beforeEach(function(done) {
+		debug('----beforeEach----');
+
 		port++;
 
 		socketController = new SocketController(url + port, 300);
 
 
 		socketsController = new SocketsController(port);
-		socketsController.on('socketsControllerReady', done);
+		socketsController.on('socketsControllerReady', function() {
+			debug('----beforeEach----');
+			done();
+		});
 
 		peersController = new events.EventEmitter();
 		socketsController.up(peersController);
 	});
 
 	afterEach(function(done) {
+		debug('----afterEach----');
+
 		peersController.removeAllListeners();
 
 		socketsController
 			.removeAllListeners()
 			.on('socketsControllerDestroyed', function() {
 				socketsController.removeAllListeners();
+				debug('----afterEach----');
 				done();
 			})
 			.on('socketsControllerAlreadyDestroyed', function() {
 				socketsController.removeAllListeners();
+				debug('----afterEach----');
 				done();
 			})
 			.destroy();
@@ -94,8 +107,16 @@ describe('SocketController', function() {
 describe('PeerController', function() {
 	var teleportServer, objWithFuncAndEvents;
 	var peerController, socketController, objectsController;
+	var authFuncClient = function(callback) {
+		callback(null, 'some data');
+	};
+	var authFuncServer = function(authData, callback) {
+		callback(null, authData === 'some data');
+	};
 
 	beforeEach(function(done) {
+		debug('----beforeEach----');
+
 		port++;
 
 		objWithFuncAndEvents = new ClassWithFuncAndEvents();
@@ -109,11 +130,15 @@ describe('PeerController', function() {
 					methods: ['simpleFunc'],
 					events: ['simpleEvent']
 				}
-			}
-		}).on('ready', done);
+			},
+			authFunc: authFuncServer
+		}).on('ready', function() {
+			debug('----beforeEach----');
+			done();
+		});
 
 		socketController = new SocketController(url + port, 300);
-		peerController = new PeerController();
+		peerController = new PeerController(authFuncClient);
 		objectsController = new events.EventEmitter();
 
 		socketController.up(peerController);
@@ -121,16 +146,20 @@ describe('PeerController', function() {
 	})
 
 	afterEach(function(done) {
+		debug('----afterEach----');
+
 		objWithFuncAndEvents.removeAllListeners();
 
 		teleportServer
 			.removeAllListeners()
 			.on('destroyed', function() {
 				teleportServer.removeAllListeners();
+				debug('----afterEach----');
 				done();
 			})
 			.on('alreadyDestroyed', function() {
 				teleportServer.removeAllListeners();
+				debug('----afterEach----');
 				done();
 			})
 			.destroy();
@@ -185,7 +214,8 @@ describe('PeerController', function() {
 						methods: ['simpleFunc'],
 						events: ['simpleEvent']
 					}
-				}
+				},
+				authFunc: authFuncServer
 			});
 		})
 
@@ -272,7 +302,18 @@ describe('PeerController', function() {
 });
 
 describe('objectsController', function() {
+	var teleportServer, objWithFuncAndEvents;
+	var peerController, socketController, objectsController;
+
+	var authFuncClient = function(callback) {
+		callback(null, 'some data');
+	};
+	var authFuncServer = function(authData, callback) {
+		callback(null, authData === 'some data');
+	};
+
 	beforeEach(function(done) {
+		debug('----beforeEach----');
 		port++;
 
 		objWithFuncAndEvents = new ClassWithFuncAndEvents();
@@ -286,11 +327,15 @@ describe('objectsController', function() {
 					methods: ['simpleFunc'],
 					events: ['simpleEvent']
 				}
-			}
-		}).on('ready', done);
+			},
+			authFunc: authFuncServer
+		}).on('ready', function() {
+			debug('----beforeEach----');
+			done();
+		});
 
 		socketController = new SocketController(url + port, 300);
-		peerController = new PeerController();
+		peerController = new PeerController(authFuncClient);
 		objectsController = new ObjectsController();
 
 		socketController.up(peerController);
@@ -299,16 +344,19 @@ describe('objectsController', function() {
 	});
 
 	afterEach(function(done) {
+		debug('----afterEach----');
 		objWithFuncAndEvents.removeAllListeners();
 
 		teleportServer
 			.removeAllListeners()
 			.on('destroyed', function() {
 				teleportServer.removeAllListeners();
+				debug('----afterEach----');
 				done();
 			})
 			.on('alreadyDestroyed', function() {
 				teleportServer.removeAllListeners();
+				debug('----afterEach----');
 				done();
 			})
 			.destroy();
@@ -372,7 +420,8 @@ describe('objectsController', function() {
 							methods: ['simpleFunc'],
 							events: ['simpleEvent']
 						}
-					}
+					},
+					authFunc: authFuncServer
 				}).on('ready', done);
 			});
 		});
@@ -403,8 +452,16 @@ describe('objectsController', function() {
 
 describe('TeleportClient', function() {
 	var teleportServer, teleportClient, objWithFuncAndEvents;
+	var authFuncClient = function(callback) {
+		callback(null, 'some data');
+	};
+	var authFuncServer = function(authData, callback) {
+		callback(null, authData === 'some data');
+	};
 
 	beforeEach(function(done) {
+		debug('----beforeEach----');
+
 		port++;
 
 		objWithFuncAndEvents = new ClassWithFuncAndEvents();
@@ -418,26 +475,35 @@ describe('TeleportClient', function() {
 					methods: ['simpleFunc'],
 					events: ['simpleEvent']
 				}
-			}
-		}).on('ready', done);
+			},
+			authFunc: authFuncServer
+		}).on('ready', function() {
+			debug('----beforeEach----');
+			done();
+		});
 
 		teleportClient = new TeleportClient({
 			serverAddress: url + port,
-			autoReconnect: 300
+			autoReconnect: 300,
+			authFunc: authFuncClient
 		});
 	});
 
 	afterEach(function(done) {
+		debug('----afterEach----');
+
 		objWithFuncAndEvents.removeAllListeners();
 
 		teleportServer
 			.removeAllListeners()
 			.on('destroyed', function() {
 				teleportServer.removeAllListeners();
+				debug('----afterEach----');
 				done();
 			})
 			.on('alreadyDestroyed', function() {
 				teleportServer.removeAllListeners();
+				debug('----afterEach----');
 				done();
 			})
 			.destroy();
