@@ -7,6 +7,10 @@ TeleportClient
 npm install teleport-client --save
 ```
 
+```
+bower install teleport-client --save
+```
+
 <h5>Это RPC клиент, умеет:</h5>
  * Подлючаться и авторизовываться на сервере.
  * Получать от сервера список телепортируемых объектов, имена их методов и событий.
