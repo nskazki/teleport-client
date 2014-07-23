@@ -6,6 +6,8 @@ var SocketsController = require('../../TeleportServer/libs/SocketsController');
 var PeerController = require('../libs/PeerController');
 var SocketController = require('../libs/SocketController');
 var ObjectsController = require('../libs/ObjectsController');
+var DependencyController = require('../libs/DependencyController');
+
 var TeleportClient = require('..');
 
 var events = require('events');
@@ -450,6 +452,96 @@ describe('objectsController', function() {
 	})
 })
 
+describe('DependencyController', function() {
+	var teleportServer, objWithFuncAndEvents;
+	var peerController, socketController, objectsController, dependencyController;
+
+	var authFuncClient = function(callback) {
+		callback(null, 'some data');
+	};
+	var authFuncServer = function(authData, callback) {
+		callback(null, authData === 'some data');
+	};
+
+	beforeEach(function(done) {
+		debug('----beforeEach----');
+		port++;
+
+		objWithFuncAndEvents = new ClassWithFuncAndEvents();
+
+		teleportServer = new TeleportServer({
+			port: port,
+			peerDisconnectedTimeout: 2000,
+			objects: {
+				'blank': {
+					object: objWithFuncAndEvents,
+					methods: ['simpleFunc'],
+					events: ['simpleEvent']
+				}
+			},
+			authFunc: authFuncServer
+		}).on('ready', function() {
+			debug('----beforeEach----');
+			done();
+		});
+
+		socketController = new SocketController(url + port, 300);
+		peerController = new PeerController(authFuncClient);
+		objectsController = new ObjectsController();
+		dependencyController = new DependencyController();
+
+		socketController.up(peerController);
+		peerController.down(socketController).up(objectsController);
+		objectsController.down(peerController);
+		dependencyController.down(objectsController);
+	});
+
+	afterEach(function(done) {
+		debug('----afterEach----');
+		objWithFuncAndEvents.removeAllListeners();
+
+		teleportServer
+			.removeAllListeners()
+			.on('destroyed', function() {
+				teleportServer.removeAllListeners();
+				debug('----afterEach----');
+				done();
+			})
+			.on('alreadyDestroyed', function() {
+				teleportServer.removeAllListeners();
+				debug('----afterEach----');
+				done();
+			})
+			.destroy();
+
+		socketController.removeAllListeners().destroy();
+		peerController.removeAllListeners().destroy();
+		objectsController.removeAllListeners().destroy();
+	});
+
+	it('#get function', function(done) {
+		dependencyController.get(function(blank) {
+			blank.simpleFunc(null, done);
+		})
+	})
+
+	it('#get array', function(done) {
+		dependencyController.get(['blank',
+			function(blank) {
+				blank.simpleFunc(null, done)
+			}
+		])
+	})
+
+	it('#get after ~objectsControllerReady', function(done) {
+		objectsController.on('objectsControllerReady', function() {
+			dependencyController.get(function(blank) {
+				blank.simpleFunc(null, done);
+			});
+		});
+	});
+})
+
 describe('TeleportClient', function() {
 	var teleportServer, teleportClient, objWithFuncAndEvents;
 	var authFuncClient = function(callback) {
@@ -538,6 +630,21 @@ describe('TeleportClient', function() {
 		teleportClient.on('ready', function() {
 			teleportClient.objects.blank.simpleFunc(null, done);
 		});
+	})
+
+	it('#applyDependences', function(done) {
+		teleportClient.applyDependences(function(blank) {
+			blank.simpleFunc(null, done);
+		});
+	})
+
+	it('#applyDependences func with dependences field', function(done) {
+		var func = function(obj) {
+			obj.simpleFunc(null, done);
+		};
+		func.dependences = ['blank'];
+
+		teleportClient.applyDependences(func);
 	})
 });
 

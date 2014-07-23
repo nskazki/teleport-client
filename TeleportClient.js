@@ -27,6 +27,7 @@
 var SocketController = require('./libs/SocketController');
 var PeerController = require('./libs/PeerController');
 var ObjectsController = require('./libs/ObjectsController');
+var DependencyController = require('./libs/DependencyController');
 
 var util = require('util');
 var events = require('events');
@@ -43,7 +44,7 @@ function TeleportClient(params) {
 		serverAddress: 'notEmptyString',
 		autoReconnect: 'integer',
 		authFunc: 'function'
-	})) throw new Error('does not match pattern.');
+	})) throw new Error('TeleportClient: init params does not match pattern.');
 
 	this._initAsyncEmit();
 
@@ -52,12 +53,15 @@ function TeleportClient(params) {
 	this._objectsController = new ObjectsController();
 	this._socketController = new SocketController(params.serverAddress, params.autoReconnect);
 	this._peerController = new PeerController(params.authFunc);
+	this._dependencyController = new DependencyController();
 
 	this._socketController.up(this._peerController);
 	this._peerController.down(this._socketController).up(this._objectsController);
 	this._objectsController.down(this._peerController);
+	this._dependencyController.down(this._objectsController);
 
-	this.objects = this._objectsController._objects;
+	this.objects = this._objectsController._objects; //object
+	this.applyDependences = this._dependencyController.get.bind(this._dependencyController); //function
 
 	this._bindOnControllersEvents();
 

@@ -3,7 +3,7 @@
 		
 		needPeerSend
 	
-		objectsControllerReady
+		fobjectsControllerReady
 
 		objectsControllerDestroyed
 		objectsControllerAlreadyDestroyed
@@ -102,7 +102,7 @@ ObjectsController.prototype._onObjectProps = function(objectsProps) {
 		}
 	}
 
-	this.emit('objectsControllerReady', objectsProps);
+	this.emit('objectsControllerReady', objectsProps, this._objects);
 }
 
 ObjectsController.prototype._callEventsHandler = function(message) {

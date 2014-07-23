@@ -77,13 +77,27 @@ var teleportClient = new TeleportClient({
 		callback(null, 'example project');
 	}
 })
-	.on('ready', function(objectsProps) {
+	.on('ready', function(objectsProps, objects) {
 			console.log(objectsProps);
 
-			teleportClient.objects.ipBox
+			objects.ipBox
 				.getIps(someCallback)
 				.on('newIps', someHandler);
 	});
+
+teleportClient.applyDependences(function(logBox) {
+	logBox.getLogs(someCallback);
+})
+
+teleportClient.applyDependences(['blackBox', function(box) {
+	box.getColor(someCallback);
+}]);
+
+...
+someObj.someFunc.dependences = ['ipBox'];
+
+teleportClient.applyDependences(someObj.someFunc, someObj);
+
 ```
 
 <h5>Параметры принимаемые конструктором:</h5>
@@ -93,6 +107,10 @@ var teleportClient = new TeleportClient({
 
 <h5>Публичные методы:</h5>
  * `destroy` - метод прекращающий работу объекта.
+ * `applyDependences` - метод разрешающий зависимости переданной в него функции. Просто взял у angularjs.
+ <br>Принимает на вход :
+    * функцию или массив содержищий имена зависимостей и функцию.
+    * опцианально вторым аргументом принимает контекст с которым будет вызванна функция. 
 
 <h5>Events:</h5>
 Эти события отражают текущее состояние TeleportClient.
@@ -117,3 +135,8 @@ var teleportClient = new TeleportClient({
 <h5>How to debug:</h5>
 
 DEBUG=TeleportClient* npm test
+
+<h5>HALP</h5>
+
+Надежды мало, но вдруг.
+Кто нибудь переведите readme на английский, с меня спасибо :)
