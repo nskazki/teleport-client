@@ -1,7 +1,7 @@
 "use strict";
 
 window.teleportClient = new TeleportClient({
-	serverAddress: "ws://localhost:8000",
+	serverAddress: "ws://localhost:7000",
 	autoReconnect: 3000,
 	authFunc: function(callback) {
 		callback(null, 'example project');
@@ -41,6 +41,15 @@ window.teleportClient = new TeleportClient({
 
 });
 
+teleportClient
+	.on('ready', CreateConsoleEventLogger('ready'))
+	.on('reconnect', CreateConsoleEventLogger('reconnect'))
+	.on('reconnectOnOldTerms', CreateConsoleEventLogger('reconnectOnOldTerms'))
+	.on('reconnectAndReinit', CreateConsoleEventLogger('reconnectAndReinit'))
+	.on('reconnecting', CreateConsoleEventLogger('reconnecting'))
+	.on('error', CreateConsoleEventLogger('error'))
+	.on('destroyed', CreateConsoleEventLogger('destroyed'))
+	.on('alreadyDestroyed', CreateConsoleEventLogger('alreadyDestroyed'))
 
 function CreateEventLogger(objectName, eventName) {
 	return function() {
@@ -72,4 +81,12 @@ function CreateCallbackLogger(objectName, methodName) {
 		var welcom = document.getElementById('welcom');
 		welcom.parentNode.insertBefore(details, welcom);
 	}
+}
+
+//helpers
+
+function CreateConsoleEventLogger(eventName) {
+	return function() {
+		console.log('eventName: %s, arguments: %s', eventName, Array.prototype.slice(arguments).join());
+	};
 }

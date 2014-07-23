@@ -4,7 +4,7 @@ var TeleportClient = require('../../');
 var util = require('util');
 
 window.teleportClient = new TeleportClient({
-	serverAddress: "ws://localhost:8000",
+	serverAddress: "ws://localhost:7000",
 	autoReconnect: 3000,
 	authFunc: function(callback) {
 		callback(null, 'example project');
@@ -44,6 +44,15 @@ window.teleportClient = new TeleportClient({
 
 });
 
+teleportClient
+	.on('ready', CreateEventLogger('teleportClient', 'ready'))
+	.on('reconnect', CreateEventLogger('teleportClient', 'reconnect'))
+	.on('reconnectOnOldTerms', CreateEventLogger('teleportClient', 'reconnectOnOldTerms'))
+	.on('reconnectAndReinit', CreateEventLogger('teleportClient', 'reconnectAndReinit'))
+	.on('reconnecting', CreateEventLogger('teleportClient', 'reconnecting'))
+	.on('error', CreateEventLogger('teleportClient', 'error'))
+	.on('destroyed', CreateEventLogger('teleportClient', 'destroyed'))
+	.on('alreadyDestroyed', CreateEventLogger('teleportClient', 'alreadyDestroyed'))
 
 function CreateEventLogger(objectName, eventName) {
 	return function() {
