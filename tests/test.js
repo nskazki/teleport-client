@@ -646,6 +646,24 @@ describe('TeleportClient', function() {
 
 		teleportClient.applyDependences(func);
 	})
+
+	it('#applyDependences send and receive Eng chars', function(done) {
+		teleportClient.applyDependences(function(blank) {
+			blank.simpleFunc('Eng', function(err, result) {
+				assert.equal(result, 'Eng');
+				done(err, result);
+			});
+		});
+	})
+
+	it('#applyDependences send and receive Ru chars', function(done) {
+		teleportClient.applyDependences(function(blank) {
+			blank.simpleFunc('Привет', function(err, result) {
+				assert.equal(result, 'Привет');
+				done(err, result);
+			});
+		});
+	})
 });
 
 //
