@@ -1,0 +1,25 @@
+{
+  "name": "teleport-client",
+  "main": "dist/TeleportClient.js",
+  "version": "0.6.3",
+  "homepage": "https://github.com/nskazki/web-TeleportClient",
+  "authors": [
+    "nskazki <nskazki@gmail.com>"
+  ],
+  "description": "RPC client",
+  "moduleType": [
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "RPC"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
