@@ -46,8 +46,6 @@ function TeleportClient(params) {
 		authFunc: 'function'
 	})) throw new Error('TeleportClient: init params does not match pattern.');
 
-	this._initAsyncEmit();
-
 	this._params = params;
 
 	this._objectsController = new ObjectsController();
@@ -66,17 +64,6 @@ function TeleportClient(params) {
 	this._bindOnControllersEvents();
 
 	this._isInit = true;
-}
-
-TeleportClient.prototype._initAsyncEmit = function() {
-	var vanullaEmit = this.emit;
-	this.emit = function() {
-		var asyncArguments = arguments;
-
-		process.nextTick(function() {
-			vanullaEmit.apply(this, asyncArguments);
-		}.bind(this), 0);
-	}.bind(this);
 }
 
 TeleportClient.prototype.destroy = function() {

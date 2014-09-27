@@ -29,22 +29,9 @@ util.inherits(ObjectsController, events.EventEmitter);
 module.exports = ObjectsController;
 
 function ObjectsController() {
-	this._initAsyncEmit();
-
 	this._isInit = true;
 	this._requests = [];
 	this._objects = {};
-}
-
-ObjectsController.prototype._initAsyncEmit = function() {
-	var vanullaEmit = this.emit;
-	this.emit = function() {
-		var asyncArguments = arguments;
-
-		process.nextTick(function() {
-			vanullaEmit.apply(this, asyncArguments);
-		}.bind(this), 0);
-	}.bind(this);
 }
 
 ObjectsController.prototype.down = function(peerController) {

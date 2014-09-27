@@ -38,8 +38,6 @@ util.inherits(PeerController, events.EventEmitter);
 module.exports = PeerController;
 
 function PeerController(authFunc) {
-	this._initAsyncEmit();
-
 	this._authFunc = authFunc;
 	this._authData = null;
 
@@ -51,17 +49,6 @@ function PeerController(authFunc) {
 	this._selfBind();
 
 	this._isInit = true;
-}
-
-PeerController.prototype._initAsyncEmit = function() {
-	var vanullaEmit = this.emit;
-	this.emit = function() {
-		var asyncArguments = arguments;
-
-		setTimeout(function() {
-			vanullaEmit.apply(this, asyncArguments);
-		}.bind(this), 0);
-	}.bind(this);
 }
 
 PeerController.prototype._onPeerConnect = function() {
