@@ -632,6 +632,12 @@ describe('TeleportClient', function() {
 		});
 	})
 
+	it('#ready, use objects from eventArgs', function(done) {
+		teleportClient.on('ready', function(objectsProps, objects) {
+			objects.blank.simpleFunc(null, done);
+		})
+	})
+
 	it('#applyDependences', function(done) {
 		teleportClient.applyDependences(function(blank) {
 			blank.simpleFunc(null, done);

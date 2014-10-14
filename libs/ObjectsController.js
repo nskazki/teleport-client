@@ -3,7 +3,7 @@
 		
 		needPeerSend
 	
-		fobjectsControllerReady
+		objectsControllerReady
 
 		objectsControllerDestroyed
 		objectsControllerAlreadyDestroyed

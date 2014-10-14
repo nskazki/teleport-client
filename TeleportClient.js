@@ -89,8 +89,8 @@ TeleportClient.prototype.destroy = function() {
 };
 
 TeleportClient.prototype._bindOnControllersEvents = function() {
-	var peerSourceNames = ['peerConnect', 'peerReconnect', 'peerReconnect', 'peerReconnectWithNewId', 'peerReconnectWithNewId', 'peerReconnecting'];
-	var peerNewNames = ['ready', 'reconnect', 'reconnectOnOldTerms', 'reconnect', 'reconnectAndReinit', 'reconnecting'];
+	var peerSourceNames = ['peerReconnect', 'peerReconnect', 'peerReconnectWithNewId', 'peerReconnectWithNewId', 'peerReconnecting'];
+	var peerNewNames = ['reconnect', 'reconnectOnOldTerms', 'reconnect', 'reconnectAndReinit', 'reconnecting'];
 
 	this._createEvetnsProxy(
 		this._peerController,
@@ -105,6 +105,15 @@ TeleportClient.prototype._bindOnControllersEvents = function() {
 		this._socketController,
 		socketSourceNames,
 		socketNewNames
+	);
+
+	var objectsSourceName = ['objectsControllerReady'];
+	var objectsNewName = ['ready'];
+
+	this._createEvetnsProxy(
+		this._objectsController,
+		objectsSourceName,
+		objectsNewName
 	);
 }
 
