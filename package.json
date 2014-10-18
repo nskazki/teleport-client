@@ -1,6 +1,6 @@
 {
   "name": "teleport-client",
-  "version": "0.6.5",
+  "version": "0.6.8",
   "description": "browserify rpc client",
   "main": "TeleportClient.js",
   "scripts": {
@@ -25,6 +25,8 @@
   "homepage": "https://github.com/nskazki/web-TeleportClient",
   "devDependencies": {
     "browserify": "^4.2.1",
+    "grunt": "^0.4.5",
+    "grunt-bump": "0.0.16",
     "mocha": "^1.20.1",
     "socket.io": "^1.0.6",
     "uglify-js": "^2.4.15",
