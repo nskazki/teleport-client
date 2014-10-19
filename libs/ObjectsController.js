@@ -128,7 +128,7 @@ ObjectsController.prototype._callRequestsHandler = function(message) {
 			//выбросит свою более лучшую ошибку
 			//и юзер увидит фигню
 
-			setImmediate(this.emit.bind(this, 'error', ex));
+			setTimeout(this.emit.bind(this, 'objectCallbackError', ex), 0);
 		}
 	} else {
 		debug('#_callRequestsHandler - callback not found!\n\t message: %j', message);
