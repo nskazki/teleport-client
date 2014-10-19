@@ -257,8 +257,7 @@ describe('PeerController', function() {
 					type: "callback",
 					methodName: "simpleFunc",
 					requestId: 0,
-					error: null,
-					result: "hello"
+					resultArgs: [null, 'hello']
 				});
 
 				done();
@@ -285,8 +284,7 @@ describe('PeerController', function() {
 					type: "callback",
 					methodName: "simpleFunc",
 					requestId: 0,
-					error: null,
-					result: "hello"
+					resultArgs: [null, 'hello']
 				});
 
 				done();

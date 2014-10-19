@@ -115,7 +115,22 @@ ObjectsController.prototype._callRequestsHandler = function(message) {
 		debug('#_callRequestsHandler -> callback call,\n\t message: %j', message);
 
 		delete this._requests[message.requestId];
-		callback(message.error, message.result);
+		try {
+			callback.apply(null, message.resultArgs);
+		} catch (ex) {
+			//нужно вырваться за пределы текущего call stack
+			//
+			//потому что если я выброшу тут error
+			//и юзер не подписался на 'error' teleport-client
+			//
+			//то eventEmitter выбросит throw ex
+			//его перехватит какой нибудь catch Socket.IO
+			//выбросит свою более лучшую ошибку
+			//
+			//и юзер увидит фигню
+
+			setImmediate(this.emit.bind(this, 'error', ex));
+		}
 	} else {
 		debug('#_callRequestsHandler - callback not found!\n\t message: %j', message);
 	}
