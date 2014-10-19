@@ -126,7 +126,6 @@ ObjectsController.prototype._callRequestsHandler = function(message) {
 			//то eventEmitter выбросит throw ex
 			//его перехватит какой нибудь catch Socket.IO
 			//выбросит свою более лучшую ошибку
-			//
 			//и юзер увидит фигню
 
 			setImmediate(this.emit.bind(this, 'error', ex));
