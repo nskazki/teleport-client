@@ -14,6 +14,7 @@
 
 		objectsControllerReady -> ready
 		objectCallbackError -> error
+		objectEventError -> error
 
 		peerReconnect -> reconnect & reconnectOnOldTerms
 		peerReconnectWithNewId -> reconnect & reconnectAndReinit
@@ -109,8 +110,8 @@ TeleportClient.prototype._bindOnControllersEvents = function() {
 		socketNewNames
 	);
 
-	var objectsSourceName = ['objectsControllerReady', 'objectCallbackError'];
-	var objectsNewName = ['ready', 'error'];
+	var objectsSourceName = ['objectsControllerReady', 'objectCallbackError', 'objectEventError'];
+	var objectsNewName = ['ready', 'error', 'error'];
 
 	this._createEvetnsProxy(
 		this._objectsController,

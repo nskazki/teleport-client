@@ -8,6 +8,9 @@
 		objectsControllerDestroyed
 		objectsControllerAlreadyDestroyed
 
+		objectEventError
+		objectCallbackError
+
 	Listenings:
 
 		down:
@@ -101,8 +104,12 @@ ObjectsController.prototype._callEventsHandler = function(message) {
 		var emitArgs = [];
 		emitArgs.push(message.eventName);
 		emitArgs = emitArgs.concat(message.args);
-
-		object.emit.apply(object, emitArgs);
+		try {
+			object.emit.apply(object, emitArgs);
+		} catch (ex) {
+			debug('#_callEventsHandler - some subscriber function throw error -> !objectEventError, ex: %s', ex.toString());
+			setTimeout(this.emit.bind(this, 'objectEventError', ex), 0);
+		}
 	} else {
 		debug('#_callEventsHandler - objectName not found!\n\t message: %j', message);
 	}
@@ -126,8 +133,10 @@ ObjectsController.prototype._callRequestsHandler = function(message) {
 			//то eventEmitter выбросит throw ex
 			//его перехватит какой нибудь catch Socket.IO
 			//выбросит свою более лучшую ошибку
+			//
 			//и юзер увидит фигню
 
+			debug('#_callEventsHandler - callback function throw error -> !objectCallbackError, ex: %s', ex.toString());
 			setTimeout(this.emit.bind(this, 'objectCallbackError', ex), 0);
 		}
 	} else {
