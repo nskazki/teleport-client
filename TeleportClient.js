@@ -11,6 +11,8 @@
 		destroy
 
 	Events:
+		
+		applyDependencesError -> error
 
 		objectsControllerReady -> ready
 		objectCallbackError -> error
@@ -62,7 +64,7 @@ function TeleportClient(params) {
 	this._dependencyController.down(this._objectsController);
 
 	this.objects = this._objectsController._objects; //object
-	this.applyDependences = this._dependencyController.get.bind(this._dependencyController); //function
+	this.applyDependences = this._dependencyController.applyDependences.bind(this._dependencyController); //function
 
 	this._bindOnControllersEvents();
 
@@ -117,6 +119,15 @@ TeleportClient.prototype._bindOnControllersEvents = function() {
 		this._objectsController,
 		objectsSourceName,
 		objectsNewName
+	);
+
+	var dependsSourceName = ['applyDependencesError'];
+	var dependsNewName = ['error'];
+
+	this._createEvetnsProxy(
+		this._dependencyController,
+		dependsSourceName,
+		dependsNewName
 	);
 }
 

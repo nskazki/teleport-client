@@ -4,18 +4,28 @@
 */
 
 /*
+    Events:
+        applyDependencesError
+
     note: 
 
-    > test.print.bind(test).apply({param: 2}, [])
-    1
-    > test.print.apply({param: 2}, [])
-    2
+        > test.print.bind(test).apply({param: 2}, [])
+        1
+        > test.print.apply({param: 2}, [])
+        2
 */
 
 var assert = require('assert');
 
 var patternMatching = require('pattern-matching');
 module.exports = DependencyController;
+
+var debug = require('debug')('TeleportClient-DependencyController');
+var util = require('util');
+var events = require('events');
+
+
+util.inherits(DependencyController, events.EventEmitter);
 
 function DependencyController() {
     this._objects = null;
@@ -43,11 +53,11 @@ DependencyController.prototype.down = function(objectsController) {
 DependencyController.prototype._callQueue = function() {
     while (this._queue.length) {
         var fn = this._queue.shift();
-        this.get(fn);
+        this.applyDependences(fn);
     }
 }
 
-DependencyController.prototype.get = function(fn, context) {
+DependencyController.prototype.applyDependences = function(fn, context) {
     if (this._isReady) {
         var dependsNames = annotate(fn);
         var dependsObjs = dependsNames.map(function(depName) {
@@ -61,7 +71,12 @@ DependencyController.prototype.get = function(fn, context) {
             fn = fn[fn.length - 1];
         }
 
-        fn.apply(context, dependsObjs);
+        try {
+            fn.apply(context, dependsObjs);
+        } catch (ex) {
+            debug('#applyDependences - some subscriber function throw error -> !applyDependencesError, ex: %s', ex.toString());
+            setTimeout(this.emit.bind(this, 'applyDependencesError', ex), 0);
+        }
     } else {
         this._queue.push(fn);
     }

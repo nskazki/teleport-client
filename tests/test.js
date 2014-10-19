@@ -517,23 +517,23 @@ describe('DependencyController', function() {
 		objectsController.removeAllListeners().destroy();
 	});
 
-	it('#get function', function(done) {
-		dependencyController.get(function(blank) {
+	it('#applyDependences function', function(done) {
+		dependencyController.applyDependences(function(blank) {
 			blank.simpleFunc(null, done);
 		})
 	})
 
-	it('#get array', function(done) {
-		dependencyController.get(['blank',
+	it('#applyDependences array', function(done) {
+		dependencyController.applyDependences(['blank',
 			function(blank) {
 				blank.simpleFunc(null, done)
 			}
 		])
 	})
 
-	it('#get after ~objectsControllerReady', function(done) {
+	it('#applyDependences after ~objectsControllerReady', function(done) {
 		objectsController.on('objectsControllerReady', function() {
-			dependencyController.get(function(blank) {
+			dependencyController.applyDependences(function(blank) {
 				blank.simpleFunc(null, done);
 			});
 		});
