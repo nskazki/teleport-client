@@ -1,7 +1,7 @@
 {
   "name": "teleport-client",
   "main": "dist/TeleportClient.js",
-  "version": "0.6.11",
+  "version": "0.6.12",
   "homepage": "https://github.com/nskazki/web-TeleportClient",
   "authors": [
     "nskazki <nskazki@gmail.com>"
