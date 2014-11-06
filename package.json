@@ -35,6 +35,6 @@
   "dependencies": {
     "debug": "^1.0.4",
     "pattern-matching": "^0.1.6",
-    "socket.io-client": "^1.2.0"
+    "socket.io-client": "1.2.0"
   }
 }
